@@ -1,230 +1,690 @@
-// ==============================
-// ALDIA - リーネ村
-// PC版 基本ゲームシステム
-// ==============================
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
 
-const canvas = document.getElementById("cv");
-const ctx = canvas.getContext("2d");
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
+<title>ALDIA - リーネ村</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05090d;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Hiragino Sans",
+    sans-serif;
+}
+
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #315b39;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.panel {
+  position: absolute;
+
+  color: white;
+
+  background: rgba(5, 12, 18, 0.88);
+
+  border: 1px solid #aeb9c2;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 4px 16px rgba(0,0,0,.55);
+}
+
+
+/* ----------------
+   タイトル
+---------------- */
+
+#title {
+
+  left: 20px;
+  top: 20px;
+
+  padding: 10px 15px;
+
+  min-width: 190px;
+}
+
+#title strong {
+
+  font-family: Georgia, serif;
+
+  font-size: 30px;
+
+  letter-spacing: 2px;
+}
+
+#title span {
+
+  display: block;
+
+  margin-top: 2px;
+
+  font-size: 14px;
+}
+
+
+/* ----------------
+   ステータス
+---------------- */
+
+#status {
+
+  right: 20px;
+  top: 20px;
+
+  padding: 10px 14px;
+
+  text-align: right;
+
+  font-family: monospace;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/* ----------------
+   クエスト
+---------------- */
+
+#quest {
+
+  left: 20px;
+  top: 108px;
+
+  padding: 10px 14px;
+
+  font-size: 14px;
+}
+
+
+/* ----------------
+   会話
+---------------- */
+
+#dialog {
+
+  display: none;
+
+  left: 50%;
+  bottom: 28px;
+
+  transform: translateX(-50%);
+
+  width: min(760px, 75vw);
+
+  padding: 17px 20px;
+
+  font-size: 17px;
+
+  line-height: 1.7;
+}
+
+#speaker {
+
+  margin-bottom: 5px;
+
+  color: #f2d999;
+
+  font-weight: bold;
+}
+
+
+/* ----------------
+   操作説明
+---------------- */
+
+#help {
+
+  right: 20px;
+  bottom: 20px;
+
+  padding: 9px 12px;
+
+  font-size: 12px;
+
+  line-height: 1.6;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div id="game">
+
+  <canvas id="canvas"></canvas>
+
+
+  <div
+    id="title"
+    class="panel"
+  >
+
+    <strong>ALDIA</strong>
+
+    <span>
+      リーネ村
+    </span>
+
+  </div>
+
+
+  <div
+    id="status"
+    class="panel"
+  >
+
+    LV ―　HP 20/20
+
+    <br>
+
+    MP 0/0　G 30
+
+  </div>
+
+
+  <div
+    id="quest"
+    class="panel"
+  >
+
+    ◆ 母エレナの様子を見よう
+
+  </div>
+
+
+  <div
+    id="dialog"
+    class="panel"
+  >
+
+    <div id="speaker"></div>
+
+    <div id="dialogText"></div>
+
+  </div>
+
+
+  <div
+    id="help"
+    class="panel"
+  >
+
+    WASD / 矢印：移動
+
+    <br>
+
+    Space / Enter：話す
+
+  </div>
+
+</div>
+
+
+
+<script>
+
+/* ========================================
+
+   ALDIA
+   リーネ村
+
+======================================== */
+
+
+const canvas =
+  document.getElementById("canvas");
+
+
+const ctx =
+  canvas.getContext("2d");
+
+
+const quest =
+  document.getElementById("quest");
+
+
+const dialog =
+  document.getElementById("dialog");
+
+
+const speaker =
+  document.getElementById("speaker");
+
+
+const dialogText =
+  document.getElementById("dialogText");
+
+
+
+/* ========================================
+   ゲーム設定
+======================================== */
+
 
 const WORLD = {
-  width: 1900,
-  height: 1450
+
+  width: 2000,
+
+  height: 1500
+
 };
 
-// ------------------------------
-// 主人公
-// ------------------------------
+
+let storyStage = 0;
+
+
+
+/* ========================================
+   主人公
+======================================== */
+
 
 const player = {
-  x: 930,
-  y: 900,
 
-  speed: 185,
+  x: 950,
+
+  y: 950,
+
+  width: 34,
+
+  height: 52,
+
+  speed: 220,
 
   direction: "down",
 
   moving: false,
 
-  walkFrame: 0
+  animation: 0
+
 };
 
 
-// ------------------------------
-// キー入力
-// ------------------------------
+
+/* ========================================
+   NPC
+======================================== */
+
+
+const npcs = [
+
+  {
+
+    name: "エレナ",
+
+    type: "elena",
+
+    x: 780,
+
+    y: 500
+
+  },
+
+
+  {
+
+    name: "薬師",
+
+    type: "apothecary",
+
+    x: 670,
+
+    y: 760
+
+  },
+
+
+  {
+
+    name: "武器屋",
+
+    type: "smith",
+
+    x: 1160,
+
+    y: 760
+
+  },
+
+
+  {
+
+    name: "村人",
+
+    type: "villager",
+
+    x: 780,
+
+    y: 1050
+
+  },
+
+
+  {
+
+    name: "子供",
+
+    type: "child",
+
+    x: 1160,
+
+    y: 1030
+
+  }
+
+];
+
+
+
+/* ========================================
+   建物
+======================================== */
+
+
+const buildings = [
+
+  {
+
+    name: "主人公の家",
+
+    x: 550,
+
+    y: 130,
+
+    width: 340,
+
+    height: 310,
+
+    roof: "#73452f"
+
+  },
+
+
+  {
+
+    name: "教会",
+
+    x: 1070,
+
+    y: 100,
+
+    width: 350,
+
+    height: 340,
+
+    roof: "#315d70"
+
+  },
+
+
+  {
+
+    name: "薬師の家",
+
+    x: 330,
+
+    y: 510,
+
+    width: 320,
+
+    height: 310,
+
+    roof: "#315d70"
+
+  },
+
+
+  {
+
+    name: "武器屋",
+
+    x: 1210,
+
+    y: 510,
+
+    width: 320,
+
+    height: 310,
+
+    roof: "#73452f"
+
+  }
+
+];
+
+
+
+/* ========================================
+   キーボード
+======================================== */
+
 
 const keys = {
+
   up: false,
+
   down: false,
+
   left: false,
+
   right: false
+
 };
 
 
 const keyMap = {
 
   ArrowUp: "up",
-  w: "up",
 
   ArrowDown: "down",
-  s: "down",
 
   ArrowLeft: "left",
-  a: "left",
 
   ArrowRight: "right",
+
+  w: "up",
+
+  s: "down",
+
+  a: "left",
+
   d: "right"
 
 };
 
 
-window.addEventListener("keydown", (event) => {
 
-  const key = event.key.toLowerCase();
+window.addEventListener(
+  "keydown",
+  event => {
 
-  if (keyMap[key]) {
-
-    keys[keyMap[key]] = true;
-
-    event.preventDefault();
-
-  }
-
-});
+    const key =
+      event.key.toLowerCase();
 
 
-window.addEventListener("keyup", (event) => {
+    if (keyMap[key]) {
 
-  const key = event.key.toLowerCase();
+      keys[keyMap[key]] = true;
 
-  if (keyMap[key]) {
+      event.preventDefault();
 
-    keys[keyMap[key]] = false;
+    }
 
-  }
-
-});
-
-
-// ------------------------------
-// NPC
-// ------------------------------
-
-const NPCS = [
-
-  {
-    name: "エレナ",
-    sprite: "elena",
-    x: 770,
-    y: 470
-  },
-
-  {
-    name: "薬師",
-    sprite: "apothecary",
-    x: 680,
-    y: 720
-  },
-
-  {
-    name: "武器屋",
-    sprite: "smith",
-    x: 1110,
-    y: 755
-  },
-
-  {
-    name: "村人",
-    sprite: "farmer",
-    x: 730,
-    y: 1010
-  },
-
-  {
-    name: "村人",
-    sprite: "woman",
-    x: 1040,
-    y: 1000
-  },
-
-  {
-    name: "子供",
-    sprite: "child",
-    x: 1180,
-    y: 980
-  }
-
-];
-
-
-// ------------------------------
-// 建物
-// ------------------------------
-
-const BUILDINGS = [
-
-  {
-    name: "主人公の家",
-    sprite: "house",
-    x: 600,
-    y: 130,
-    width: 300,
-    height: 302
-  },
-
-  {
-    name: "教会",
-    sprite: "church",
-    x: 1040,
-    y: 80,
-    width: 330,
-    height: 338
-  },
-
-  {
-    name: "薬師の家",
-    sprite: "apothecary_house",
-    x: 350,
-    y: 500,
-    width: 290,
-    height: 338
-  },
-
-  {
-    name: "武器屋",
-    sprite: "smith_house",
-    x: 1180,
-    y: 505,
-    width: 285,
-    height: 360
-  }
-
-];
-
-
-// ------------------------------
-// 当たり判定
-// ------------------------------
-
-function isBlocked(x, y) {
-
-  // マップ外
-
-  if (
-    x < 45 ||
-    y < 45 ||
-    x > WORLD.width - 45 ||
-    y > WORLD.height - 45
-  ) {
-
-    return true;
-
-  }
-
-
-  // 川
-
-  if (
-    x > 1510 &&
-    !(y > 990 && y < 1240)
-  ) {
-
-    return true;
-
-  }
-
-
-  // 建物
-
-  for (const building of BUILDINGS) {
 
     if (
 
-      x > building.x + 20 &&
-      x < building.x + building.width - 20 &&
+      (
+        key === " " ||
+        key === "enter"
+      )
 
-      y > building.y + 65 &&
-      y < building.y + building.height - 8
+      &&
+
+      !event.repeat
+
+    ) {
+
+      event.preventDefault();
+
+      interact();
+
+    }
+
+  }
+);
+
+
+
+window.addEventListener(
+  "keyup",
+  event => {
+
+    const key =
+      event.key.toLowerCase();
+
+
+    if (keyMap[key]) {
+
+      keys[keyMap[key]] = false;
+
+    }
+
+  }
+);
+
+
+
+/* ========================================
+   Canvasサイズ
+======================================== */
+
+
+function resizeCanvas() {
+
+  canvas.width =
+    window.innerWidth;
+
+
+  canvas.height =
+    window.innerHeight;
+
+}
+
+
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
+
+
+resizeCanvas();
+
+
+
+/* ========================================
+   当たり判定
+======================================== */
+
+
+function blocked(
+  x,
+  y
+) {
+
+  if (
+
+    x < 30 ||
+
+    y < 30 ||
+
+    x >
+      WORLD.width - 30 ||
+
+    y >
+      WORLD.height - 30
+
+  ) {
+
+    return true;
+
+  }
+
+
+  /* 川 */
+
+  if (
+
+    x > 1600 &&
+
+    !(
+      y > 930 &&
+      y < 1160
+    )
+
+  ) {
+
+    return true;
+
+  }
+
+
+  /* 建物 */
+
+  for (
+    const building
+    of buildings
+  ) {
+
+    if (
+
+      x >
+        building.x + 15 &&
+
+      x <
+        building.x +
+        building.width -
+        15 &&
+
+      y >
+        building.y + 70 &&
+
+      y <
+        building.y +
+        building.height
 
     ) {
 
@@ -240,86 +700,169 @@ function isBlocked(x, y) {
 }
 
 
-// ------------------------------
-// 主人公移動
-// ------------------------------
 
-function updatePlayer(deltaTime) {
+/* ========================================
+   主人公移動
+======================================== */
+
+
+function updatePlayer(
+  deltaTime
+) {
+
+  if (
+    dialog.style.display
+    ===
+    "block"
+  ) {
+
+    player.moving = false;
+
+    return;
+
+  }
+
 
   let dx = 0;
+
   let dy = 0;
 
 
-  if (keys.left) dx -= 1;
+  if (keys.left) {
 
-  if (keys.right) dx += 1;
+    dx -= 1;
 
-  if (keys.up) dy -= 1;
-
-  if (keys.down) dy += 1;
+  }
 
 
-  if (dx !== 0 || dy !== 0) {
+  if (keys.right) {
 
-    const length = Math.hypot(dx, dy);
+    dx += 1;
+
+  }
+
+
+  if (keys.up) {
+
+    dy -= 1;
+
+  }
+
+
+  if (keys.down) {
+
+    dy += 1;
+
+  }
+
+
+
+  if (
+    dx !== 0 ||
+    dy !== 0
+  ) {
+
+    const length =
+      Math.hypot(
+        dx,
+        dy
+      );
+
 
     dx /= length;
+
     dy /= length;
 
 
-    // 向き
 
-    if (Math.abs(dx) > Math.abs(dy)) {
+    if (
+      Math.abs(dx)
+      >
+      Math.abs(dy)
+    ) {
 
       player.direction =
-        dx > 0 ? "right" : "left";
+        dx > 0
+          ? "right"
+          : "left";
 
     }
 
     else {
 
       player.direction =
-        dy > 0 ? "down" : "up";
+        dy > 0
+          ? "down"
+          : "up";
 
     }
 
 
-    const moveDistance =
+
+    const distance =
+
       player.speed *
+
       deltaTime /
+
       1000;
 
 
+
     const nextX =
+
       player.x +
+
       dx *
-      moveDistance;
+
+      distance;
 
 
     const nextY =
+
       player.y +
+
       dy *
-      moveDistance;
+
+      distance;
 
 
-    if (!isBlocked(nextX, player.y)) {
 
-      player.x = nextX;
+    if (
+      !blocked(
+        nextX,
+        player.y
+      )
+    ) {
+
+      player.x =
+        nextX;
 
     }
 
 
-    if (!isBlocked(player.x, nextY)) {
+    if (
+      !blocked(
+        player.x,
+        nextY
+      )
+    ) {
 
-      player.y = nextY;
+      player.y =
+        nextY;
 
     }
+
 
 
     player.moving = true;
 
-    player.walkFrame +=
-      deltaTime * 0.04;
+
+    player.animation +=
+
+      deltaTime *
+
+      0.015;
 
   }
 
@@ -332,68 +875,854 @@ function updatePlayer(deltaTime) {
 }
 
 
-// ------------------------------
-// NPCを調べる
-// ------------------------------
 
-function interact() {
-
-  let nearestNPC = null;
-
-  let nearestDistance = Infinity;
+/* ========================================
+   カメラ
+======================================== */
 
 
-  for (const npc of NPCS) {
+function getCamera() {
 
-    const distance =
-      Math.hypot(
-        player.x - npc.x,
-        player.y - npc.y
-      );
+  let x =
 
+    player.x -
 
-    if (distance < nearestDistance) {
-
-      nearestDistance = distance;
-
-      nearestNPC = npc;
-
-    }
-
-  }
+    canvas.width /
+    2;
 
 
-  if (
-    nearestNPC &&
-    nearestDistance < 85
+  let y =
+
+    player.y -
+
+    canvas.height /
+    2;
+
+
+
+  x = Math.max(
+
+    0,
+
+    Math.min(
+
+      WORLD.width -
+      canvas.width,
+
+      x
+
+    )
+
+  );
+
+
+  y = Math.max(
+
+    0,
+
+    Math.min(
+
+      WORLD.height -
+      canvas.height,
+
+      y
+
+    )
+
+  );
+
+
+  return {
+
+    x,
+
+    y
+
+  };
+
+}
+
+
+
+/* ========================================
+   地面
+======================================== */
+
+
+function drawGround() {
+
+  ctx.fillStyle =
+    "#527d45";
+
+
+  ctx.fillRect(
+
+    0,
+
+    0,
+
+    WORLD.width,
+
+    WORLD.height
+
+  );
+
+
+  /* 道 */
+
+  ctx.fillStyle =
+    "#b5a27b";
+
+
+  ctx.fillRect(
+
+    880,
+
+    0,
+
+    180,
+
+    WORLD.height
+
+  );
+
+
+  ctx.fillRect(
+
+    120,
+
+    820,
+
+    1450,
+
+    190
+
+  );
+
+
+  /* 川 */
+
+  ctx.fillStyle =
+    "#326c83";
+
+
+  ctx.fillRect(
+
+    1600,
+
+    0,
+
+    400,
+
+    WORLD.height
+
+  );
+
+
+  /* 水の線 */
+
+  ctx.strokeStyle =
+    "#6fa9b9";
+
+
+  ctx.lineWidth = 3;
+
+
+  for (
+    let y = 20;
+    y < WORLD.height;
+    y += 40
   ) {
 
-    talkToNPC(nearestNPC);
+    ctx.beginPath();
+
+    ctx.moveTo(
+      1620,
+      y
+    );
+
+    ctx.lineTo(
+      1980,
+      y + 10
+    );
+
+    ctx.stroke();
 
   }
 
 }
 
 
-// ------------------------------
-// 会話
-// ------------------------------
 
-let storyStage = 0;
+/* ========================================
+   建物
+======================================== */
 
 
-function talkToNPC(npc) {
+function drawBuilding(
+  building
+) {
 
-  if (npc.name === "エレナ") {
+  const x =
+    building.x;
 
-    if (storyStage === 0) {
+
+  const y =
+    building.y;
+
+
+  const width =
+    building.width;
+
+
+  const height =
+    building.height;
+
+
+
+  /* 壁 */
+
+  ctx.fillStyle =
+    "#c3b48e";
+
+
+  ctx.fillRect(
+
+    x,
+
+    y + 80,
+
+    width,
+
+    height - 80
+
+  );
+
+
+
+  /* 屋根 */
+
+  ctx.fillStyle =
+    building.roof;
+
+
+  ctx.beginPath();
+
+
+  ctx.moveTo(
+
+    x - 25,
+
+    y + 90
+
+  );
+
+
+  ctx.lineTo(
+
+    x +
+    width / 2,
+
+    y
+
+  );
+
+
+  ctx.lineTo(
+
+    x +
+    width +
+    25,
+
+    y + 90
+
+  );
+
+
+  ctx.closePath();
+
+
+  ctx.fill();
+
+
+
+  /* ドア */
+
+  ctx.fillStyle =
+    "#54392c";
+
+
+  ctx.fillRect(
+
+    x +
+    width / 2 -
+    22,
+
+    y +
+    height -
+    65,
+
+    44,
+
+    65
+
+  );
+
+
+
+  /* 窓 */
+
+  ctx.fillStyle =
+    "#f3c75d";
+
+
+  ctx.fillRect(
+
+    x + 50,
+
+    y +
+    height -
+    100,
+
+    45,
+
+    45
+
+  );
+
+
+  ctx.fillRect(
+
+    x +
+    width -
+    95,
+
+    y +
+    height -
+    100,
+
+    45,
+
+    45
+
+  );
+
+}
+
+
+
+/* ========================================
+   木
+======================================== */
+
+
+function drawTree(
+  x,
+  y
+) {
+
+  ctx.fillStyle =
+    "#563d2b";
+
+
+  ctx.fillRect(
+
+    x - 8,
+
+    y,
+
+    16,
+
+    45
+
+  );
+
+
+  ctx.fillStyle =
+    "#295637";
+
+
+  ctx.beginPath();
+
+
+  ctx.arc(
+
+    x,
+
+    y - 10,
+
+    35,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  ctx.fill();
+
+
+  ctx.fillStyle =
+    "#3f7043";
+
+
+  ctx.beginPath();
+
+
+  ctx.arc(
+
+    x - 18,
+
+    y - 25,
+
+    22,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  ctx.fill();
+
+
+  ctx.beginPath();
+
+
+  ctx.arc(
+
+    x + 20,
+
+    y - 22,
+
+    25,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  ctx.fill();
+
+}
+
+
+
+/* ========================================
+   NPC
+======================================== */
+
+
+function drawCharacter(
+  character
+) {
+
+  const x =
+    character.x;
+
+
+  const y =
+    character.y;
+
+
+
+  ctx.fillStyle =
+    "rgba(0,0,0,.3)";
+
+
+  ctx.beginPath();
+
+
+  ctx.ellipse(
+
+    x,
+
+    y + 5,
+
+    15,
+
+    6,
+
+    0,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  ctx.fill();
+
+
+
+  /* 体 */
+
+  ctx.fillStyle =
+    character.type
+    ===
+    "elena"
+      ? "#885a64"
+      : "#415d76";
+
+
+  ctx.fillRect(
+
+    x - 12,
+
+    y - 35,
+
+    24,
+
+    32
+
+  );
+
+
+
+  /* 顔 */
+
+  ctx.fillStyle =
+    "#d8a475";
+
+
+  ctx.fillRect(
+
+    x - 10,
+
+    y - 55,
+
+    20,
+
+    20
+
+  );
+
+
+
+  /* 髪 */
+
+  ctx.fillStyle =
+    "#3a2921";
+
+
+  ctx.fillRect(
+
+    x - 11,
+
+    y - 60,
+
+    22,
+
+    9
+
+  );
+
+}
+
+
+
+/* ========================================
+   主人公
+======================================== */
+
+
+function drawPlayer() {
+
+  const bob =
+
+    player.moving
+
+      ? Math.sin(
+          player.animation *
+          5
+        ) * 2
+
+      : 0;
+
+
+
+  ctx.fillStyle =
+    "rgba(0,0,0,.35)";
+
+
+  ctx.beginPath();
+
+
+  ctx.ellipse(
+
+    player.x,
+
+    player.y + 5,
+
+    17,
+
+    7,
+
+    0,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+
+  ctx.fill();
+
+
+
+  /* 足 */
+
+  const walk =
+
+    player.moving
+
+      ? Math.sin(
+          player.animation *
+          6
+        ) * 5
+
+      : 0;
+
+
+  ctx.fillStyle =
+    "#252d37";
+
+
+  ctx.fillRect(
+
+    player.x - 10,
+
+    player.y -
+    15 +
+    walk,
+
+    7,
+
+    20
+
+  );
+
+
+  ctx.fillRect(
+
+    player.x + 3,
+
+    player.y -
+    15 -
+    walk,
+
+    7,
+
+    20
+
+  );
+
+
+
+  /* 体 */
+
+  ctx.fillStyle =
+    "#294d70";
+
+
+  ctx.fillRect(
+
+    player.x - 14,
+
+    player.y -
+    45 +
+    bob,
+
+    28,
+
+    32
+
+  );
+
+
+
+  /* 顔 */
+
+  ctx.fillStyle =
+    "#d7a173";
+
+
+  ctx.fillRect(
+
+    player.x - 11,
+
+    player.y -
+    65 +
+    bob,
+
+    22,
+
+    20
+
+  );
+
+
+
+  /* 髪 */
+
+  ctx.fillStyle =
+    "#17232e";
+
+
+  ctx.fillRect(
+
+    player.x - 13,
+
+    player.y -
+    71 +
+    bob,
+
+    26,
+
+    10
+
+  );
+
+}
+
+
+
+/* ========================================
+   会話
+======================================== */
+
+
+function showDialog(
+  name,
+  message
+) {
+
+  speaker.textContent =
+    name;
+
+
+  dialogText.textContent =
+    message;
+
+
+  dialog.style.display =
+    "block";
+
+}
+
+
+
+function closeDialog() {
+
+  dialog.style.display =
+    "none";
+
+}
+
+
+
+function setQuest(
+  message
+) {
+
+  quest.textContent =
+    "◆ " + message;
+
+}
+
+
+
+/* ========================================
+   NPC会話
+======================================== */
+
+
+function interact() {
+
+  if (
+    dialog.style.display
+    ===
+    "block"
+  ) {
+
+    closeDialog();
+
+    return;
+
+  }
+
+
+
+  let nearest = null;
+
+  let distance =
+    Infinity;
+
+
+
+  for (
+    const npc
+    of npcs
+  ) {
+
+    const d =
+      Math.hypot(
+
+        player.x -
+        npc.x,
+
+        player.y -
+        npc.y
+
+      );
+
+
+    if (
+      d < distance
+    ) {
+
+      distance = d;
+
+      nearest = npc;
+
+    }
+
+  }
+
+
+
+  if (
+    !nearest ||
+    distance > 90
+  ) {
+
+    return;
+
+  }
+
+
+
+  if (
+    nearest.name
+    ===
+    "エレナ"
+  ) {
+
+    if (
+      storyStage === 0
+    ) {
 
       showDialog(
 
         "エレナ",
 
-        "ごめんね……今日は少し身体が重くてね。\n" +
-        "大丈夫。すぐ良くなるから。"
+        "ごめんね……今日は少し身体が重くてね。\n大丈夫。すぐ良くなるから。"
 
       );
 
@@ -402,7 +1731,21 @@ function talkToNPC(npc) {
 
 
       setQuest(
+
         "薬師に母のことを相談しよう"
+
+      );
+
+    }
+
+    else {
+
+      showDialog(
+
+        "エレナ",
+
+        "そんなに心配しなくていいからね。"
+
       );
 
     }
@@ -410,17 +1753,22 @@ function talkToNPC(npc) {
   }
 
 
-  else if (npc.name === "薬師") {
 
-    if (storyStage >= 1) {
+  else if (
+    nearest.name
+    ===
+    "薬師"
+  ) {
+
+    if (
+      storyStage >= 1
+    ) {
 
       showDialog(
 
         "薬師",
 
-        "ただの風邪じゃなさそうだね。\n" +
-        "「月白草」があれば薬を作れる。\n" +
-        "北のルナ洞窟に生えているはずだよ。"
+        "ただの風邪じゃなさそうだね。\n「月白草」があれば薬を作れる。\n北のルナ洞窟に生えているはずだよ。"
 
       );
 
@@ -429,7 +1777,9 @@ function talkToNPC(npc) {
 
 
       setQuest(
+
         "武器屋で洞窟へ行く準備をしよう"
+
       );
 
     }
@@ -437,18 +1787,22 @@ function talkToNPC(npc) {
   }
 
 
-  else if (npc.name === "武器屋") {
 
-    if (storyStage >= 2) {
+  else if (
+    nearest.name
+    ===
+    "武器屋"
+  ) {
+
+    if (
+      storyStage >= 2
+    ) {
 
       showDialog(
 
         "武器屋",
 
-        "洞窟へ行くだと？\n" +
-        "……母ちゃんのためか。\n\n" +
-        "この古びた剣を貸してやる。\n" +
-        "生きて返しに来いよ。"
+        "洞窟へ行くだと？\n……母ちゃんのためか。\n\nこの古びた剣を貸してやる。\n生きて返しに来いよ。"
 
       );
 
@@ -457,105 +1811,207 @@ function talkToNPC(npc) {
 
 
       setQuest(
+
         "北のルナ洞窟へ向かおう"
+
       );
 
     }
 
   }
 
+
+
+  else {
+
+    showDialog(
+
+      nearest.name,
+
+      "エレナさん、早く良くなるといいね。"
+
+    );
+
+  }
+
 }
 
 
-// ------------------------------
-// SPACE / ENTER
-// ------------------------------
 
-window.addEventListener(
-  "keydown",
-  (event) => {
+/* ========================================
+   描画
+======================================== */
+
+
+function draw() {
+
+  ctx.clearRect(
+
+    0,
+
+    0,
+
+    canvas.width,
+
+    canvas.height
+
+  );
+
+
+  const camera =
+    getCamera();
+
+
+
+  ctx.save();
+
+
+  ctx.translate(
+
+    -camera.x,
+
+    -camera.y
+
+  );
+
+
+
+  drawGround();
+
+
+
+  /* 木 */
+
+  for (
+    let i = 0;
+    i < 18;
+    i++
+  ) {
+
+    drawTree(
+
+      100 +
+      (
+        i *
+        173
+      ) %
+      1450,
+
+      120 +
+      (
+        i *
+        241
+      ) %
+      1250
+
+    );
+
+  }
+
+
+
+  /* 建物 */
+
+  for (
+    const building
+    of buildings
+  ) {
+
+    drawBuilding(
+      building
+    );
+
+  }
+
+
+
+  /* NPC */
+
+  const characters = [
+
+    ...npcs,
+
+    {
+
+      player: true,
+
+      x: player.x,
+
+      y: player.y
+
+    }
+
+  ];
+
+
+  characters.sort(
+
+    (
+      a,
+      b
+    ) =>
+
+      a.y -
+      b.y
+
+  );
+
+
+
+  for (
+    const character
+    of characters
+  ) {
 
     if (
-
-      event.key === " " ||
-      event.key === "Enter"
-
+      character.player
     ) {
 
-      if (!event.repeat) {
+      drawPlayer();
 
-        interact();
+    }
 
-      }
+    else {
+
+      drawCharacter(
+        character
+      );
 
     }
 
   }
-);
 
 
-// ------------------------------
-// カメラ
-// ------------------------------
 
-function getCamera() {
-
-  let cameraX =
-    player.x -
-    canvas.width / 2;
-
-
-  let cameraY =
-    player.y -
-    canvas.height / 2;
-
-
-  cameraX =
-    Math.max(
-      0,
-      Math.min(
-        WORLD.width - canvas.width,
-        cameraX
-      )
-    );
-
-
-  cameraY =
-    Math.max(
-      0,
-      Math.min(
-        WORLD.height - canvas.height,
-        cameraY
-      )
-    );
-
-
-  return {
-
-    x: cameraX,
-
-    y: cameraY
-
-  };
+  ctx.restore();
 
 }
 
 
-// ------------------------------
-// メインループ
-// ------------------------------
+
+/* ========================================
+   ゲームループ
+======================================== */
+
 
 let previousTime =
   performance.now();
 
 
-function gameLoop(currentTime) {
+
+function gameLoop(
+  currentTime
+) {
 
   const deltaTime =
+
     Math.min(
+
       34,
+
       currentTime -
       previousTime
+
     );
 
 
@@ -563,10 +2019,14 @@ function gameLoop(currentTime) {
     currentTime;
 
 
-  updatePlayer(deltaTime);
+
+  updatePlayer(
+    deltaTime
+  );
 
 
-  drawGame();
+  draw();
+
 
 
   requestAnimationFrame(
@@ -576,6 +2036,13 @@ function gameLoop(currentTime) {
 }
 
 
+
 requestAnimationFrame(
   gameLoop
 );
+
+
+</script>
+
+</body>
+</html>
