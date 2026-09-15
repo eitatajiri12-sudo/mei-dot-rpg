@@ -1,282 +1,581 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>ALDIA — リーネ村 PC版</title>
-<style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#081018;touch-action:none;-webkit-user-select:none;user-select:none}
-*{box-sizing:border-box}
-#game{position:fixed;inset:0;background:#081018}
-canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
-#ui{position:absolute;inset:0;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;color:#fff}
-.panel{background:rgba(7,14,22,.88);border:1px solid rgba(220,230,240,.65);box-shadow:0 3px 12px #0008;border-radius:10px}
-#status{position:absolute;top:calc(env(safe-area-inset-top) + 9px);left:10px;padding:7px 10px;min-width:132px}
-#status b{font-family:Georgia,serif;font-size:21px;letter-spacing:1px}#status small{display:block;font-size:11px;margin-top:1px}
-#stats{position:absolute;top:calc(env(safe-area-inset-top) + 9px);right:10px;padding:8px 10px;text-align:right;font:11px ui-monospace,SFMono-Regular,monospace;line-height:1.55}
-#quest{position:absolute;top:calc(env(safe-area-inset-top) + 76px);left:10px;padding:7px 10px;font-size:11px;max-width:76%}
-#dialog{display:none;position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 142px);padding:12px 13px;font-size:14px;line-height:1.65;white-space:pre-line;pointer-events:auto}
-#name{font-weight:700;color:#f4dda0;margin-bottom:3px}
-#controls{position:absolute;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 8px);height:126px;pointer-events:none}
-.pad{position:absolute;left:0;bottom:0;width:126px;height:126px}
-button{position:absolute;border:2px solid rgba(220,230,240,.68);background:rgba(13,29,44,.84);color:#fff;-webkit-tap-highlight-color:transparent;pointer-events:auto}
-.dir{width:50px;height:50px;border-radius:50%;font-size:19px}.u{left:38px;top:0}.d{left:38px;bottom:0}.l{left:0;top:38px}.r{right:0;top:38px}
-#a{right:1px;bottom:8px;width:80px;height:80px;border-radius:50%;font-size:29px;font-weight:800}
-#hint{position:absolute;right:4px;bottom:91px;font-size:10px;text-shadow:0 2px 3px #000}
-#menu{position:absolute;right:0;top:0;display:flex;gap:5px;pointer-events:auto}
-#menu button{position:static;border-radius:8px;height:32px;padding:0 9px;font-size:10px}
+// ==============================
+// ALDIA - リーネ村
+// PC版 基本ゲームシステム
+// ==============================
 
-@media (min-width: 800px){
-  body{background:#05090d}
-  #game{
-    left:50%;top:50%;right:auto;bottom:auto;
-    width:min(1280px,100vw);height:min(800px,100vh);
-    transform:translate(-50%,-50%);
-    border:1px solid #2d3943;
-    box-shadow:0 20px 70px #000;
+const canvas = document.getElementById("cv");
+const ctx = canvas.getContext("2d");
+
+const WORLD = {
+  width: 1900,
+  height: 1450
+};
+
+// ------------------------------
+// 主人公
+// ------------------------------
+
+const player = {
+  x: 930,
+  y: 900,
+
+  speed: 185,
+
+  direction: "down",
+
+  moving: false,
+
+  walkFrame: 0
+};
+
+
+// ------------------------------
+// キー入力
+// ------------------------------
+
+const keys = {
+  up: false,
+  down: false,
+  left: false,
+  right: false
+};
+
+
+const keyMap = {
+
+  ArrowUp: "up",
+  w: "up",
+
+  ArrowDown: "down",
+  s: "down",
+
+  ArrowLeft: "left",
+  a: "left",
+
+  ArrowRight: "right",
+  d: "right"
+
+};
+
+
+window.addEventListener("keydown", (event) => {
+
+  const key = event.key.toLowerCase();
+
+  if (keyMap[key]) {
+
+    keys[keyMap[key]] = true;
+
+    event.preventDefault();
+
   }
-  #status{top:18px;left:20px;min-width:190px;padding:11px 14px}
-  #status b{font-size:29px}
-  #status small{font-size:13px}
-  #stats{top:18px;right:20px;font-size:14px;padding:11px 14px}
-  #quest{top:104px;left:20px;font-size:14px;max-width:460px;padding:10px 13px}
-  #dialog{
-    left:50%;right:auto;bottom:28px;width:min(760px,72%);
-    transform:translateX(-50%);font-size:17px;padding:17px 20px;
+
+});
+
+
+window.addEventListener("keyup", (event) => {
+
+  const key = event.key.toLowerCase();
+
+  if (keyMap[key]) {
+
+    keys[keyMap[key]] = false;
+
   }
-  #controls{display:none}
-}
-#pcHelp{
-  display:none;position:absolute;z-index:25;right:20px;bottom:18px;
-  padding:10px 13px;font:13px -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
-  line-height:1.7;color:#fff;pointer-events:none
-}
-@media (min-width:800px){#pcHelp{display:block}}
 
-</style>
-</head>
-<body><div id="game"><canvas id="c"></canvas>
-<div id="ui">
- <div id="status" class="panel"><b>ALDIA</b><small>リーネ村</small></div>
- <div id="stats" class="panel">LV ―　HP 20/20<br>MP 0/0　G 30</div>
- <div id="quest" class="panel">◆ 母エレナの様子を見よう</div>
- <div id="dialog" class="panel"><div id="name"></div><div id="text"></div></div>
-<div id="pcHelp" class="panel">WASD / 矢印：移動<br>Space / Enter：話す・調べる<br>R：記録　M：地図</div>
- <div id="controls">
-  <div class="pad"><button class="dir u" data-k="up">▲</button><button class="dir d" data-k="down">▼</button><button class="dir l" data-k="left">◀</button><button class="dir r" data-k="right">▶</button></div>
-  <div id="menu"><button id="record">記録</button><button id="map">地図</button></div>
-  <span id="hint">話す／調べる</span><button id="a">A</button>
- </div>
-</div></div>
-<script>
-(()=>{
-const cv=document.getElementById('c'),ctx=cv.getContext('2d',{alpha:false});
-ctx.imageSmoothingEnabled=false;
-const quest=document.getElementById('quest'),dlg=document.getElementById('dialog'),dn=document.getElementById('name'),dt=document.getElementById('text');
-let W=0,H=0,DPR=1,stage=0,last=0,anim=0;
-const TS=32, MW=30,MH=38;
-const keys={up:false,down:false,left:false,right:false};
-
-function resize(){DPR=Math.min(2,devicePixelRatio||1);const r=game.getBoundingClientRect();W=r.width;H=r.height;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);ctx.imageSmoothingEnabled=false}
-addEventListener('resize',resize);resize();
-
-const map=[];
-for(let y=0;y<MH;y++){map[y]=[];for(let x=0;x<MW;x++) map[y][x]=0}
-// Paths.
-for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){
- if((x>=13&&x<=17)||(y>=17&&y<=21)||(y>=28&&y<=30&&x>5&&x<25))map[y][x]=1;
-}
-// River at east + bridge.
-for(let y=0;y<MH;y++)for(let x=25;x<MW;x++)map[y][x]=2;
-for(let x=24;x<30;x++)for(let y=28;y<=30;y++)map[y][x]=3;
-// Pond / creek accents.
-for(let y=31;y<38;y++)for(let x=0;x<3;x++)map[y][x]=2;
-
-const houses=[
- {x:4,y:4,w:7,h:6,roof:0,name:'主人公の家'},
- {x:18,y:4,w:7,h:6,roof:1,name:'教会'},
- {x:3,y:13,w:7,h:6,roof:1,name:'薬師'},
- {x:19,y:13,w:7,h:6,roof:0,name:'武器屋'},
- {x:4,y:24,w:8,h:6,roof:0,name:'民家'},
- {x:17,y:24,w:7,h:6,roof:1,name:'宿屋'}
-];
-function blocked(px,py){
- const tx=px/TS,ty=py/TS;
- if(tx<.5||ty<.5||tx>MW-.5||ty>MH-.5)return true;
- if(tx>=25 && !(ty>=28&&ty<=31))return true;
- for(const h of houses){
-   if(tx>h.x-.2&&tx<h.x+h.w+.2&&ty>h.y+2.0&&ty<h.y+h.h+.35)return true;
- }
- return false;
-}
-const hero={x:15*TS,y:24*TS,dir:0,moving:false,step:0};
-const npcs=[
- {name:'エレナ',x:14.3*TS,y:11.2*TS,kind:'woman',dir:2,phase:.4},
- {name:'薬師',x:11.0*TS,y:18.0*TS,kind:'elder',dir:1,phase:1.7},
- {name:'武器屋',x:19.0*TS,y:19.4*TS,kind:'smith',dir:3,phase:2.4},
- {name:'村人',x:14*TS,y:20.5*TS,kind:'farmer',dir:2,phase:.8},
- {name:'子供',x:17.5*TS,y:22*TS,kind:'child',dir:1,phase:3.1},
- {name:'村人',x:8*TS,y:21*TS,kind:'woman',dir:0,phase:4.4}
-];
-const particles=Array.from({length:36},(_,i)=>({x:(i*83)%900+20,y:(i*137)%1100+40,p:i*.71}));
-
-function noise(x,y){return ((x*73+y*151+x*y*17)%97)/97}
-function tile(x,y,t,time){
- const X=x*TS,Y=y*TS;
- if(t===0){
-  ctx.fillStyle='#547f45';ctx.fillRect(X,Y,TS,TS);
-  for(let i=0;i<7;i++){let n=noise(x*7+i,y*11+i);ctx.fillStyle=i%3===0?'#6c9a55':'#3f6c3b';ctx.fillRect(X+3+(n*25|0),Y+4+((n*47)%23|0),2,4)}
- } else if(t===1){
-  ctx.fillStyle='#b8a47c';ctx.fillRect(X,Y,TS,TS);
-  ctx.fillStyle='#9d8b68';for(let i=0;i<5;i++){let n=noise(x+i*2,y+i*5);ctx.fillRect(X+(n*28|0),Y+((n*43)%28|0),3,2)}
- } else if(t===2){
-  ctx.fillStyle='#285d72';ctx.fillRect(X,Y,TS,TS);
-  ctx.fillStyle='#43849a';let off=(time*.025+y*5)%16;for(let i=-1;i<3;i++)ctx.fillRect(X+3,Y+i*16+off,22,2);
- } else {
-  ctx.fillStyle='#856a47';ctx.fillRect(X,Y,TS,TS);ctx.fillStyle='#b49a69';
-  for(let i=0;i<4;i++)ctx.fillRect(X+i*8+1,Y,4,TS);ctx.fillStyle='#5b4935';ctx.fillRect(X,Y+4,TS,3);ctx.fillRect(X,Y+25,TS,3);
- }
-}
-function tree(x,y,s=1){
- ctx.save();ctx.translate(x,y);ctx.scale(s,s);
- ctx.fillStyle='#553b2b';ctx.fillRect(-4,8,8,20);
- ctx.fillStyle='#244b31';ctx.beginPath();ctx.arc(0,0,17,0,7);ctx.fill();
- ctx.fillStyle='#35623b';ctx.beginPath();ctx.arc(-8,-6,11,0,7);ctx.arc(9,-5,12,0,7);ctx.fill();
- ctx.fillStyle='#4d7847';ctx.fillRect(-9,-13,4,4);ctx.fillRect(7,-10,4,3);ctx.restore();
-}
-function house(h){
- let X=h.x*TS,Y=h.y*TS,w=h.w*TS,hh=h.h*TS;
- // shadow
- ctx.fillStyle='#1a271f88';ctx.fillRect(X-7,Y+40,w+14,hh-22);
- // walls
- ctx.fillStyle='#c2b18a';ctx.fillRect(X,Y+60,w,hh-60);
- ctx.fillStyle='#72513a';for(let xx=0;xx<w;xx+=32){ctx.fillRect(X+xx,Y+60,5,hh-60)}
- // roof
- ctx.fillStyle=h.roof?'#284d64':'#6d3e2d';ctx.beginPath();ctx.moveTo(X-12,Y+64);ctx.lineTo(X+w/2,Y+6);ctx.lineTo(X+w+12,Y+64);ctx.closePath();ctx.fill();
- ctx.fillStyle=h.roof?'#3c6880':'#96523a';for(let yy=28;yy<63;yy+=9)ctx.fillRect(X+10,Y+yy,w-20,4);
- // timber
- ctx.fillStyle='#513a2d';ctx.fillRect(X,Y+60,w,6);ctx.fillRect(X+w/2-3,Y+60,6,hh-60);
- // door
- ctx.fillStyle='#4c3329';ctx.fillRect(X+w/2-15,Y+hh-43,30,43);ctx.fillStyle='#d0a65a';ctx.fillRect(X+w/2+7,Y+hh-22,3,3);
- // windows
- for(const dx of [32,w-55]){ctx.fillStyle='#4a3329';ctx.fillRect(X+dx,Y+hh-50,23,25);ctx.fillStyle='#f3c85b';ctx.fillRect(X+dx+4,Y+hh-46,15,16);ctx.fillStyle='#fff0a6';ctx.fillRect(X+dx+7,Y+hh-43,4,7)}
-}
-function flower(x,y,c){ctx.fillStyle='#315b36';ctx.fillRect(x,y,2,6);ctx.fillStyle=c;ctx.fillRect(x-2,y-2,3,3);ctx.fillRect(x+2,y-2,3,3);ctx.fillRect(x,y-4,3,3)}
-function sprite(o,time,isHero=false){
- const bob=o.moving?Math.sin(o.step*.75)*2:Math.sin(time*.004+(o.phase||0))*.6;
- const x=Math.round(o.x),y=Math.round(o.y+bob);
- ctx.save();ctx.translate(x,y);
- // shadow
- ctx.fillStyle='#10201877';ctx.beginPath();ctx.ellipse(0,12,9,4,0,0,7);ctx.fill();
- let skin='#d6a071',hair='#39291f',body='#35516c';
- if(o.kind==='elder'){hair='#d8d5ca';body='#594c68'}
- if(o.kind==='smith'){hair='#3b261d';body='#704837'}
- if(o.kind==='farmer'){hair='#b99756';body='#5d7045'}
- if(o.kind==='child'){hair='#6a4328';body='#46769a'}
- if(o.kind==='woman'){hair='#8b5b3d';body='#8b5a62'}
- if(isHero){hair='#182432';body='#2b4c70'}
- // legs animate
- let leg=o.moving?Math.sin(o.step*.75)*3:0;
- ctx.fillStyle='#252c35';ctx.fillRect(-7,-1+leg,5,13);ctx.fillRect(2,-1-leg,5,13);
- // body
- ctx.fillStyle=body;ctx.fillRect(-9,-15,18,18);ctx.fillStyle='#d8c5a0';ctx.fillRect(-6,-13,12,3);
- // head
- ctx.fillStyle=skin;ctx.fillRect(-7,-27,14,13);
- ctx.fillStyle=hair;ctx.fillRect(-8,-30,16,7);ctx.fillRect(-9,-26,4,8);ctx.fillRect(5,-26,4,8);
- // eyes based on direction
- ctx.fillStyle='#1a2027';
- if(o.dir===0){ctx.fillRect(-4,-22,2,2);ctx.fillRect(3,-22,2,2)}
- if(o.dir===1)ctx.fillRect(3,-22,2,2);
- if(o.dir===3)ctx.fillRect(-5,-22,2,2);
- // hero sword after stage 2
- if(isHero&&stage>=3){ctx.fillStyle='#c8d1d8';ctx.fillRect(9,-15,3,17);ctx.fillStyle='#77512d';ctx.fillRect(7,0,7,3)}
- ctx.restore();
-}
-function drawWorld(time){
- for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)tile(x,y,map[y][x],time);
- // vegetation borders
- for(let x=1;x<29;x+=2){if(x<12||x>18)tree(x*TS+8,2*TS+noise(x,2)*10,.85)}
- for(let y=7;y<36;y+=3){tree(1.2*TS,y*TS,.82); if(y<25)tree(28.5*TS,y*TS,.8)}
- // flowerbeds
- const cols=['#e9d9dc','#9fc9e7','#e6c96f'];
- for(let i=0;i<55;i++){let x=45+(i*137)%820,y=290+(i*83)%760;if(map[Math.min(MH-1,y/TS|0)][Math.min(MW-1,x/TS|0)]===0)flower(x,y,cols[i%3])}
- houses.forEach(house);
- // well
- ctx.fillStyle='#6f7068';ctx.beginPath();ctx.ellipse(15*TS,22*TS,22,12,0,0,7);ctx.fill();ctx.fillStyle='#17252c';ctx.beginPath();ctx.ellipse(15*TS,22*TS,14,7,0,0,7);ctx.fill();
- // torches
- for(const [x,y] of [[12.6,11],[18.2,11],[11.5,19.5],[18.5,19.5]]){
-   ctx.fillStyle='#49352a';ctx.fillRect(x*TS,y*TS,3,16);
-   let f=Math.sin(time*.012+x)*2;ctx.fillStyle='#f5a93e';ctx.fillRect(x*TS-3+f*.2,y*TS-7,9,10);ctx.fillStyle='#ffe07b';ctx.fillRect(x*TS,y*TS-5,4,6);
- }
- // NPCs and hero sorted by Y
- let all=npcs.map(n=>({o:n,h:false}));all.push({o:hero,h:true});all.sort((a,b)=>a.o.y-b.o.y);all.forEach(z=>sprite(z.o,time,z.h));
- // chimney smoke particles
- ctx.fillStyle='#d9e2df77';
- for(let i=0;i<6;i++){let yy=((time*.018+i*17)%85);ctx.beginPath();ctx.arc(8*TS+Math.sin(time*.002+i)*7,4*TS+35-yy,4+i*.7,0,7);ctx.fill()}
-}
-function show(name,text){dn.textContent=name;dt.textContent=text;dlg.style.display='block';Object.keys(keys).forEach(k=>keys[k]=false)}
-function hide(){dlg.style.display='none'}
-function action(){
- if(dlg.style.display==='block'){hide();return}
- let best=null,dist=999;
- for(const n of npcs){let d=Math.hypot(hero.x-n.x,hero.y-n.y);if(d<dist){dist=d;best=n}}
- if(best&&dist<55){
-   if(best.name==='エレナ'){
-     if(stage===0){show('エレナ','ごめんね……今日は少し身体が重くてね。\n大丈夫。すぐ良くなるから。');stage=1;quest.textContent='◆ 薬師に母のことを相談しよう'}
-     else show('エレナ','そんなに心配しなくていいからね。');
-   }else if(best.name==='薬師'){
-     if(stage>=1){show('薬師','ただの風邪じゃなさそうだね。\n「月白草」があれば薬を作れる。北のルナ洞窟に生えているはずだよ。');stage=Math.max(stage,2);quest.textContent='◆ 武器屋で洞窟へ行く準備をしよう'}
-     else show('薬師','今日は薬草の仕分けで忙しくてね。');
-   }else if(best.name==='武器屋'){
-     if(stage>=2){show('武器屋','母ちゃんのためか……。\nこの古びた剣を貸してやる。生きて返しに来いよ。');stage=3;quest.textContent='◆ 北のルナ洞窟へ向かおう'}
-     else show('武器屋','最近、洞窟の方で魔物を見たって話だ。');
-   }else show(best.name,best.kind==='child'?'今日は川の近くで遊ぶんだ！':'エレナさん、早く良くなるといいね。');
- }else show('','風が草木を揺らしている。');
-}
-function update(dt){
- if(dlg.style.display==='block'){hero.moving=false;return}
- let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);
- if(dx||dy){
-  let len=Math.hypot(dx,dy);dx/=len;dy/=len;let sp=115*dt/1000;
-  if(Math.abs(dx)>Math.abs(dy))hero.dir=dx>0?1:3;else hero.dir=dy>0?0:2;
-  let nx=hero.x+dx*sp,ny=hero.y+dy*sp;
-  if(!blocked(nx,hero.y))hero.x=nx;if(!blocked(hero.x,ny))hero.y=ny;
-  hero.moving=true;hero.step+=dt*.018;
- } else hero.moving=false;
- // small NPC life
- npcs.forEach((n,i)=>{if(i>2 && Math.sin(anim*.00035+n.phase)>.998)n.dir=(n.dir+1)%4});
-}
-function frame(t){
- let dt=Math.min(33,t-last||16);last=t;anim=t;update(dt);
- ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#081018';ctx.fillRect(0,0,W,H);
- // camera
- let camX=hero.x-W/2,camY=hero.y-H/2;
- camX=Math.max(0,Math.min(MW*TS-W,camX));camY=Math.max(0,Math.min(MH*TS-H,camY));
- ctx.save();ctx.translate(-Math.round(camX),-Math.round(camY));drawWorld(t);ctx.restore();
- requestAnimationFrame(frame);
-}
-function bindDir(el,k){
- const on=e=>{e.preventDefault();keys[k]=true},off=e=>{e.preventDefault();keys[k]=false};
- el.addEventListener('pointerdown',on,{passive:false});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,off,{passive:false}));
-}
-document.querySelectorAll('[data-k]').forEach(e=>bindDir(e,e.dataset.k));
-document.getElementById('a').addEventListener('pointerdown',e=>{e.preventDefault();action()},{passive:false});
-document.getElementById('record').onclick=()=>show('旅の記録',quest.textContent.replace('◆ ',''));
-document.getElementById('map').onclick=()=>show('リーネ村','北：主人公の家・教会\n西：薬師\n東：武器屋\n中央：井戸\n南東：川と橋');
-addEventListener('keydown',e=>{
- const k=e.key.toLowerCase();
- const m={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'};
- if(m[k]){e.preventDefault();keys[m[k]]=true}
- if((k==='enter'||k===' ')&&!e.repeat){e.preventDefault();action()}
- if(k==='r'&&!e.repeat)show('旅の記録',quest.textContent.replace('◆ ',''));
- if(k==='m'&&!e.repeat)show('リーネ村','北：主人公の家・教会\n西：薬師\n東：武器屋\n中央：井戸\n南東：川と橋');
 });
-addEventListener('keyup',e=>{
- const k=e.key.toLowerCase();
- const m={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'};
- if(m[k])keys[m[k]]=false;
-});
-requestAnimationFrame(frame);
-})();
-</script></body></html>
+
+
+// ------------------------------
+// NPC
+// ------------------------------
+
+const NPCS = [
+
+  {
+    name: "エレナ",
+    sprite: "elena",
+    x: 770,
+    y: 470
+  },
+
+  {
+    name: "薬師",
+    sprite: "apothecary",
+    x: 680,
+    y: 720
+  },
+
+  {
+    name: "武器屋",
+    sprite: "smith",
+    x: 1110,
+    y: 755
+  },
+
+  {
+    name: "村人",
+    sprite: "farmer",
+    x: 730,
+    y: 1010
+  },
+
+  {
+    name: "村人",
+    sprite: "woman",
+    x: 1040,
+    y: 1000
+  },
+
+  {
+    name: "子供",
+    sprite: "child",
+    x: 1180,
+    y: 980
+  }
+
+];
+
+
+// ------------------------------
+// 建物
+// ------------------------------
+
+const BUILDINGS = [
+
+  {
+    name: "主人公の家",
+    sprite: "house",
+    x: 600,
+    y: 130,
+    width: 300,
+    height: 302
+  },
+
+  {
+    name: "教会",
+    sprite: "church",
+    x: 1040,
+    y: 80,
+    width: 330,
+    height: 338
+  },
+
+  {
+    name: "薬師の家",
+    sprite: "apothecary_house",
+    x: 350,
+    y: 500,
+    width: 290,
+    height: 338
+  },
+
+  {
+    name: "武器屋",
+    sprite: "smith_house",
+    x: 1180,
+    y: 505,
+    width: 285,
+    height: 360
+  }
+
+];
+
+
+// ------------------------------
+// 当たり判定
+// ------------------------------
+
+function isBlocked(x, y) {
+
+  // マップ外
+
+  if (
+    x < 45 ||
+    y < 45 ||
+    x > WORLD.width - 45 ||
+    y > WORLD.height - 45
+  ) {
+
+    return true;
+
+  }
+
+
+  // 川
+
+  if (
+    x > 1510 &&
+    !(y > 990 && y < 1240)
+  ) {
+
+    return true;
+
+  }
+
+
+  // 建物
+
+  for (const building of BUILDINGS) {
+
+    if (
+
+      x > building.x + 20 &&
+      x < building.x + building.width - 20 &&
+
+      y > building.y + 65 &&
+      y < building.y + building.height - 8
+
+    ) {
+
+      return true;
+
+    }
+
+  }
+
+
+  return false;
+
+}
+
+
+// ------------------------------
+// 主人公移動
+// ------------------------------
+
+function updatePlayer(deltaTime) {
+
+  let dx = 0;
+  let dy = 0;
+
+
+  if (keys.left) dx -= 1;
+
+  if (keys.right) dx += 1;
+
+  if (keys.up) dy -= 1;
+
+  if (keys.down) dy += 1;
+
+
+  if (dx !== 0 || dy !== 0) {
+
+    const length = Math.hypot(dx, dy);
+
+    dx /= length;
+    dy /= length;
+
+
+    // 向き
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+
+      player.direction =
+        dx > 0 ? "right" : "left";
+
+    }
+
+    else {
+
+      player.direction =
+        dy > 0 ? "down" : "up";
+
+    }
+
+
+    const moveDistance =
+      player.speed *
+      deltaTime /
+      1000;
+
+
+    const nextX =
+      player.x +
+      dx *
+      moveDistance;
+
+
+    const nextY =
+      player.y +
+      dy *
+      moveDistance;
+
+
+    if (!isBlocked(nextX, player.y)) {
+
+      player.x = nextX;
+
+    }
+
+
+    if (!isBlocked(player.x, nextY)) {
+
+      player.y = nextY;
+
+    }
+
+
+    player.moving = true;
+
+    player.walkFrame +=
+      deltaTime * 0.04;
+
+  }
+
+  else {
+
+    player.moving = false;
+
+  }
+
+}
+
+
+// ------------------------------
+// NPCを調べる
+// ------------------------------
+
+function interact() {
+
+  let nearestNPC = null;
+
+  let nearestDistance = Infinity;
+
+
+  for (const npc of NPCS) {
+
+    const distance =
+      Math.hypot(
+        player.x - npc.x,
+        player.y - npc.y
+      );
+
+
+    if (distance < nearestDistance) {
+
+      nearestDistance = distance;
+
+      nearestNPC = npc;
+
+    }
+
+  }
+
+
+  if (
+    nearestNPC &&
+    nearestDistance < 85
+  ) {
+
+    talkToNPC(nearestNPC);
+
+  }
+
+}
+
+
+// ------------------------------
+// 会話
+// ------------------------------
+
+let storyStage = 0;
+
+
+function talkToNPC(npc) {
+
+  if (npc.name === "エレナ") {
+
+    if (storyStage === 0) {
+
+      showDialog(
+
+        "エレナ",
+
+        "ごめんね……今日は少し身体が重くてね。\n" +
+        "大丈夫。すぐ良くなるから。"
+
+      );
+
+
+      storyStage = 1;
+
+
+      setQuest(
+        "薬師に母のことを相談しよう"
+      );
+
+    }
+
+  }
+
+
+  else if (npc.name === "薬師") {
+
+    if (storyStage >= 1) {
+
+      showDialog(
+
+        "薬師",
+
+        "ただの風邪じゃなさそうだね。\n" +
+        "「月白草」があれば薬を作れる。\n" +
+        "北のルナ洞窟に生えているはずだよ。"
+
+      );
+
+
+      storyStage = 2;
+
+
+      setQuest(
+        "武器屋で洞窟へ行く準備をしよう"
+      );
+
+    }
+
+  }
+
+
+  else if (npc.name === "武器屋") {
+
+    if (storyStage >= 2) {
+
+      showDialog(
+
+        "武器屋",
+
+        "洞窟へ行くだと？\n" +
+        "……母ちゃんのためか。\n\n" +
+        "この古びた剣を貸してやる。\n" +
+        "生きて返しに来いよ。"
+
+      );
+
+
+      storyStage = 3;
+
+
+      setQuest(
+        "北のルナ洞窟へ向かおう"
+      );
+
+    }
+
+  }
+
+}
+
+
+// ------------------------------
+// SPACE / ENTER
+// ------------------------------
+
+window.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+
+      event.key === " " ||
+      event.key === "Enter"
+
+    ) {
+
+      if (!event.repeat) {
+
+        interact();
+
+      }
+
+    }
+
+  }
+);
+
+
+// ------------------------------
+// カメラ
+// ------------------------------
+
+function getCamera() {
+
+  let cameraX =
+    player.x -
+    canvas.width / 2;
+
+
+  let cameraY =
+    player.y -
+    canvas.height / 2;
+
+
+  cameraX =
+    Math.max(
+      0,
+      Math.min(
+        WORLD.width - canvas.width,
+        cameraX
+      )
+    );
+
+
+  cameraY =
+    Math.max(
+      0,
+      Math.min(
+        WORLD.height - canvas.height,
+        cameraY
+      )
+    );
+
+
+  return {
+
+    x: cameraX,
+
+    y: cameraY
+
+  };
+
+}
+
+
+// ------------------------------
+// メインループ
+// ------------------------------
+
+let previousTime =
+  performance.now();
+
+
+function gameLoop(currentTime) {
+
+  const deltaTime =
+    Math.min(
+      34,
+      currentTime -
+      previousTime
+    );
+
+
+  previousTime =
+    currentTime;
+
+
+  updatePlayer(deltaTime);
+
+
+  drawGame();
+
+
+  requestAnimationFrame(
+    gameLoop
+  );
+
+}
+
+
+requestAnimationFrame(
+  gameLoop
+);
