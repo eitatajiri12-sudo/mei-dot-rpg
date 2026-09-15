@@ -1,16 +1,12 @@
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>ALDIA - リーネ村</title>
 
 <style>
-
 * {
   box-sizing: border-box;
 }
@@ -21,12 +17,8 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #05090d;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Hiragino Sans",
-    sans-serif;
+  background: #08100d;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
 }
 
 #game {
@@ -34,2012 +26,1626 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #315b39;
 }
 
-canvas {
+#canvas {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
+  image-rendering: auto;
 }
 
 .panel {
   position: absolute;
-
-  color: white;
-
-  background: rgba(5, 12, 18, 0.88);
-
-  border: 1px solid #aeb9c2;
-
-  border-radius: 10px;
-
-  box-shadow:
-    0 4px 16px rgba(0,0,0,.55);
+  color: #fff;
+  background: rgba(7, 13, 17, 0.88);
+  border: 1px solid rgba(230, 235, 225, 0.65);
+  box-shadow: 0 5px 18px rgba(0,0,0,.45);
+  border-radius: 8px;
+  pointer-events: none;
 }
 
-
-/* ----------------
-   タイトル
----------------- */
-
-#title {
-
-  left: 20px;
-  top: 20px;
-
+#location {
+  top: 18px;
+  left: 18px;
   padding: 10px 15px;
-
-  min-width: 190px;
 }
 
-#title strong {
-
+#location .logo {
   font-family: Georgia, serif;
-
-  font-size: 30px;
-
-  letter-spacing: 2px;
+  font-size: 25px;
+  letter-spacing: 3px;
 }
 
-#title span {
-
-  display: block;
-
+#location .place {
   margin-top: 2px;
-
-  font-size: 14px;
+  font-size: 12px;
+  opacity: .85;
 }
-
-
-/* ----------------
-   ステータス
----------------- */
 
 #status {
-
-  right: 20px;
-  top: 20px;
-
-  padding: 10px 14px;
-
-  text-align: right;
-
+  top: 18px;
+  right: 18px;
+  padding: 9px 13px;
   font-family: monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
 
-  font-size: 14px;
+#quest {
+  top: 92px;
+  left: 18px;
+  padding: 9px 13px;
+  max-width: 330px;
+  font-size: 13px;
+}
 
+#help {
+  bottom: 17px;
+  right: 17px;
+  padding: 8px 11px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
-
-/* ----------------
-   クエスト
----------------- */
-
-#quest {
-
-  left: 20px;
-  top: 108px;
-
-  padding: 10px 14px;
-
-  font-size: 14px;
-}
-
-
-/* ----------------
-   会話
----------------- */
-
 #dialog {
-
   display: none;
-
   left: 50%;
   bottom: 28px;
-
   transform: translateX(-50%);
-
-  width: min(760px, 75vw);
-
+  width: min(760px, 80vw);
   padding: 17px 20px;
-
-  font-size: 17px;
-
-  line-height: 1.7;
+  pointer-events: auto;
 }
 
 #speaker {
-
-  margin-bottom: 5px;
-
-  color: #f2d999;
-
+  color: #e9d49c;
   font-weight: bold;
+  margin-bottom: 7px;
 }
 
-
-/* ----------------
-   操作説明
----------------- */
-
-#help {
-
-  right: 20px;
-  bottom: 20px;
-
-  padding: 9px 12px;
-
-  font-size: 12px;
-
-  line-height: 1.6;
+#dialogText {
+  white-space: pre-line;
+  line-height: 1.7;
+  font-size: 16px;
 }
 
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #08100d;
+  color: white;
+  font-family: Georgia, serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  transition: opacity .5s;
+}
 </style>
 </head>
 
-
 <body>
+
+<div id="loading">ALDIA</div>
 
 <div id="game">
 
   <canvas id="canvas"></canvas>
 
-
-  <div
-    id="title"
-    class="panel"
-  >
-
-    <strong>ALDIA</strong>
-
-    <span>
-      リーネ村
-    </span>
-
+  <div id="location" class="panel">
+    <div class="logo">ALDIA</div>
+    <div class="place">リーネ村</div>
   </div>
 
-
-  <div
-    id="status"
-    class="panel"
-  >
-
-    LV ―　HP 20/20
-
-    <br>
-
+  <div id="status" class="panel">
+    LV ―　HP 20/20<br>
     MP 0/0　G 30
-
   </div>
 
-
-  <div
-    id="quest"
-    class="panel"
-  >
-
+  <div id="quest" class="panel">
     ◆ 母エレナの様子を見よう
-
   </div>
 
+  <div id="help" class="panel">
+    WASD / 矢印：移動<br>
+    Space / Enter：調べる・話す
+  </div>
 
-  <div
-    id="dialog"
-    class="panel"
-  >
-
+  <div id="dialog" class="panel">
     <div id="speaker"></div>
-
     <div id="dialogText"></div>
-
-  </div>
-
-
-  <div
-    id="help"
-    class="panel"
-  >
-
-    WASD / 矢印：移動
-
-    <br>
-
-    Space / Enter：話す
-
   </div>
 
 </div>
 
-
-
 <script>
+"use strict";
 
-/* ========================================
-
+/* =========================================================
    ALDIA
-   リーネ村
+   第1章 / リーネ村
+   ========================================================= */
 
-======================================== */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
+const loading = document.getElementById("loading");
+const questBox = document.getElementById("quest");
+const dialogBox = document.getElementById("dialog");
+const speakerBox = document.getElementById("speaker");
+const dialogText = document.getElementById("dialogText");
 
-const canvas =
-  document.getElementById("canvas");
-
-
-const ctx =
-  canvas.getContext("2d");
-
-
-const quest =
-  document.getElementById("quest");
+ctx.imageSmoothingEnabled = true;
 
 
-const dialog =
-  document.getElementById("dialog");
+/* =========================================================
+   画像
+   GitHubのルートにアップロードしたPNGを直接読み込む
+   ========================================================= */
+
+const FILES = {
+  hero: "hero_sprites.png",
+  elena: "elena_sprites.png",
+  pharmacist: "pharmacist_sprites.png",
+  blacksmith: "blacksmith_sprites.png",
+  villagerMan: "villager_man_sprites.png",
+  villagerWoman: "villager_woman_sprites.png",
+  child: "child_sprites.png",
+
+  playerHouse: "player_house.png",
+  pharmacy: "pharmacy.png",
+  weaponShop: "weapon_shop.png",
+  church: "church.png",
+
+  trees: "trees_plants_flowers.png",
+  terrain: "terrain_tiles.png",
+  water: "water_bridge_boat.png",
+  well: "well_fences_signs.png",
+  cart: "cart_crates_tools.png",
+  lights: "lights_smoke_fire.png",
+  farm: "farm_crops.png",
+  animals: "animals.png",
+  objects: "other_objects.png"
+};
+
+const IMG = {};
+
+function loadImage(key, src) {
+  return new Promise(resolve => {
+    const img = new Image();
+
+    img.onload = () => {
+      IMG[key] = img;
+      resolve();
+    };
+
+    img.onerror = () => {
+      console.warn("画像を読み込めません:", src);
+      resolve();
+    };
+
+    img.src = "./" + src;
+  });
+}
+
+async function loadAllImages() {
+  const jobs = [];
+
+  for (const [key, src] of Object.entries(FILES)) {
+    jobs.push(loadImage(key, src));
+  }
+
+  await Promise.all(jobs);
+
+  loading.style.opacity = "0";
+
+  setTimeout(() => {
+    loading.style.display = "none";
+  }, 500);
+}
 
 
-const speaker =
-  document.getElementById("speaker");
+/* =========================================================
+   Canvas
+   ========================================================= */
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.floor(innerWidth * dpr);
+  canvas.height = Math.floor(innerHeight * dpr);
+
+  canvas.style.width = innerWidth + "px";
+  canvas.style.height = innerHeight + "px";
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener("resize", resize);
+resize();
 
 
-const dialogText =
-  document.getElementById("dialogText");
-
-
-
-/* ========================================
-   ゲーム設定
-======================================== */
-
+/* =========================================================
+   ワールド
+   ========================================================= */
 
 const WORLD = {
-
-  width: 2000,
-
-  height: 1500
-
+  width: 2100,
+  height: 1550
 };
 
 
-let storyStage = 0;
-
-
-
-/* ========================================
+/* =========================================================
    主人公
-======================================== */
-
+   ========================================================= */
 
 const player = {
+  x: 1030,
+  y: 1030,
 
-  x: 950,
-
-  y: 950,
-
-  width: 34,
-
-  height: 52,
-
-  speed: 220,
+  speed: 205,
 
   direction: "down",
 
   moving: false,
 
-  animation: 0
+  frame: 0,
 
+  frameTimer: 0,
+
+  radius: 18
 };
 
 
+/* =========================================================
+   入力
+   ========================================================= */
 
-/* ========================================
-   NPC
-======================================== */
+const keys = {
+  up: false,
+  down: false,
+  left: false,
+  right: false
+};
 
+const keyMap = {
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
 
-const npcs = [
+  w: "up",
+  W: "up",
 
-  {
+  a: "left",
+  A: "left",
 
-    name: "エレナ",
+  s: "down",
+  S: "down",
 
-    type: "elena",
+  d: "right",
+  D: "right"
+};
 
-    x: 780,
+window.addEventListener("keydown", e => {
 
-    y: 500
-
-  },
-
-
-  {
-
-    name: "薬師",
-
-    type: "apothecary",
-
-    x: 670,
-
-    y: 760
-
-  },
-
-
-  {
-
-    name: "武器屋",
-
-    type: "smith",
-
-    x: 1160,
-
-    y: 760
-
-  },
-
-
-  {
-
-    name: "村人",
-
-    type: "villager",
-
-    x: 780,
-
-    y: 1050
-
-  },
-
-
-  {
-
-    name: "子供",
-
-    type: "child",
-
-    x: 1160,
-
-    y: 1030
-
+  if (keyMap[e.key]) {
+    keys[keyMap[e.key]] = true;
+    e.preventDefault();
   }
 
-];
+  if (
+    (e.code === "Space" || e.key === "Enter") &&
+    !e.repeat
+  ) {
+    e.preventDefault();
+    interact();
+  }
+});
+
+window.addEventListener("keyup", e => {
+
+  if (keyMap[e.key]) {
+    keys[keyMap[e.key]] = false;
+  }
+});
 
 
-
-/* ========================================
+/* =========================================================
    建物
-======================================== */
-
+   ========================================================= */
 
 const buildings = [
 
   {
-
     name: "主人公の家",
-
-    x: 550,
-
-    y: 130,
-
-    width: 340,
-
-    height: 310,
-
-    roof: "#73452f"
-
+    image: "playerHouse",
+    x: 540,
+    y: 250,
+    w: 330,
+    h: 330
   },
 
-
   {
-
-    name: "教会",
-
-    x: 1070,
-
-    y: 100,
-
-    width: 350,
-
-    height: 340,
-
-    roof: "#315d70"
-
-  },
-
-
-  {
-
     name: "薬師の家",
-
-    x: 330,
-
-    y: 510,
-
-    width: 320,
-
-    height: 310,
-
-    roof: "#315d70"
-
+    image: "pharmacy",
+    x: 250,
+    y: 690,
+    w: 315,
+    h: 330
   },
 
+  {
+    name: "武器屋",
+    image: "weaponShop",
+    x: 1260,
+    y: 690,
+    w: 315,
+    h: 330
+  },
 
   {
-
-    name: "武器屋",
-
-    x: 1210,
-
-    y: 510,
-
-    width: 320,
-
-    height: 310,
-
-    roof: "#73452f"
-
+    name: "教会",
+    image: "church",
+    x: 1180,
+    y: 180,
+    w: 370,
+    h: 385
   }
 
 ];
 
 
+/* =========================================================
+   NPC
+   ========================================================= */
 
-/* ========================================
-   キーボード
-======================================== */
+const npcs = [
 
+  {
+    name: "エレナ",
+    image: "elena",
+    x: 760,
+    y: 625,
+    scale: 1
+  },
 
-const keys = {
+  {
+    name: "薬師",
+    image: "pharmacist",
+    x: 610,
+    y: 845,
+    scale: 1
+  },
 
-  up: false,
+  {
+    name: "武器屋",
+    image: "blacksmith",
+    x: 1195,
+    y: 870,
+    scale: 1.05
+  },
 
-  down: false,
+  {
+    name: "村人",
+    image: "villagerMan",
+    x: 850,
+    y: 1130,
+    scale: 1
+  },
 
-  left: false,
+  {
+    name: "村人",
+    image: "villagerWoman",
+    x: 1130,
+    y: 1200,
+    scale: 1
+  },
 
-  right: false
-
-};
-
-
-const keyMap = {
-
-  ArrowUp: "up",
-
-  ArrowDown: "down",
-
-  ArrowLeft: "left",
-
-  ArrowRight: "right",
-
-  w: "up",
-
-  s: "down",
-
-  a: "left",
-
-  d: "right"
-
-};
-
-
-
-window.addEventListener(
-  "keydown",
-  event => {
-
-    const key =
-      event.key.toLowerCase();
-
-
-    if (keyMap[key]) {
-
-      keys[keyMap[key]] = true;
-
-      event.preventDefault();
-
-    }
-
-
-    if (
-
-      (
-        key === " " ||
-        key === "enter"
-      )
-
-      &&
-
-      !event.repeat
-
-    ) {
-
-      event.preventDefault();
-
-      interact();
-
-    }
-
+  {
+    name: "子供",
+    image: "child",
+    x: 1350,
+    y: 1100,
+    scale: .9
   }
-);
+
+];
 
 
+/* =========================================================
+   木
+   ========================================================= */
 
-window.addEventListener(
-  "keyup",
-  event => {
+const trees = [
+  [110,170,1.15],
+  [210,220,1.05],
+  [340,150,1.2],
+  [470,175,1.05],
 
-    const key =
-      event.key.toLowerCase();
+  [1670,170,1.1],
+  [1810,200,1.2],
+  [1950,160,1.1],
+
+  [100,560,1.15],
+  [170,680,1.05],
+  [90,850,1.2],
+
+  [1770,620,1.15],
+  [1930,720,1.05],
+
+  [130,1200,1.15],
+  [300,1330,1.1],
+  [470,1280,1.2],
+
+  [1630,1280,1.15],
+  [1810,1340,1.1],
+  [1980,1230,1.2]
+];
 
 
-    if (keyMap[key]) {
+/* =========================================================
+   小物
+   ========================================================= */
 
-      keys[keyMap[key]] = false;
+const props = [
 
-    }
+  {
+    type: "well",
+    x: 820,
+    y: 760,
+    w: 110,
+    h: 120
+  },
 
+  {
+    type: "cart",
+    x: 1460,
+    y: 1080,
+    w: 150,
+    h: 115
   }
-);
+
+];
 
 
-
-/* ========================================
-   Canvasサイズ
-======================================== */
-
-
-function resizeCanvas() {
-
-  canvas.width =
-    window.innerWidth;
-
-
-  canvas.height =
-    window.innerHeight;
-
-}
-
-
-window.addEventListener(
-  "resize",
-  resizeCanvas
-);
-
-
-resizeCanvas();
-
-
-
-/* ========================================
+/* =========================================================
    当たり判定
-======================================== */
+   ========================================================= */
 
-
-function blocked(
-  x,
-  y
-) {
+function isBlocked(x, y) {
 
   if (
-
-    x < 30 ||
-
-    y < 30 ||
-
-    x >
-      WORLD.width - 30 ||
-
-    y >
-      WORLD.height - 30
-
+    x < 35 ||
+    y < 35 ||
+    x > WORLD.width - 35 ||
+    y > WORLD.height - 35
   ) {
-
     return true;
-
   }
-
 
   /* 川 */
 
   if (
-
-    x > 1600 &&
-
-    !(
-      y > 930 &&
-      y < 1160
-    )
-
+    x > 1720 &&
+    !(y > 900 && y < 1120)
   ) {
-
     return true;
-
   }
-
 
   /* 建物 */
 
-  for (
-    const building
-    of buildings
-  ) {
+  for (const b of buildings) {
+
+    const left = b.x + 25;
+    const right = b.x + b.w - 25;
+
+    const top = b.y + 95;
+    const bottom = b.y + b.h - 15;
 
     if (
-
-      x >
-        building.x + 15 &&
-
-      x <
-        building.x +
-        building.width -
-        15 &&
-
-      y >
-        building.y + 70 &&
-
-      y <
-        building.y +
-        building.height
-
+      x > left &&
+      x < right &&
+      y > top &&
+      y < bottom
     ) {
-
       return true;
-
     }
-
   }
-
 
   return false;
-
 }
 
 
-
-/* ========================================
+/* =========================================================
    主人公移動
-======================================== */
+   ========================================================= */
 
+function updatePlayer(dt) {
 
-function updatePlayer(
-  deltaTime
-) {
-
-  if (
-    dialog.style.display
-    ===
-    "block"
-  ) {
-
+  if (dialogBox.style.display === "block") {
     player.moving = false;
-
     return;
-
   }
-
 
   let dx = 0;
-
   let dy = 0;
 
-
-  if (keys.left) {
-
-    dx -= 1;
-
-  }
-
-
-  if (keys.right) {
-
-    dx += 1;
-
-  }
-
-
-  if (keys.up) {
-
-    dy -= 1;
-
-  }
-
-
-  if (keys.down) {
-
-    dy += 1;
-
-  }
-
-
-
-  if (
-    dx !== 0 ||
-    dy !== 0
-  ) {
-
-    const length =
-      Math.hypot(
-        dx,
-        dy
-      );
-
-
-    dx /= length;
-
-    dy /= length;
-
-
-
-    if (
-      Math.abs(dx)
-      >
-      Math.abs(dy)
-    ) {
-
-      player.direction =
-        dx > 0
-          ? "right"
-          : "left";
-
-    }
-
-    else {
-
-      player.direction =
-        dy > 0
-          ? "down"
-          : "up";
-
-    }
-
-
-
-    const distance =
-
-      player.speed *
-
-      deltaTime /
-
-      1000;
-
-
-
-    const nextX =
-
-      player.x +
-
-      dx *
-
-      distance;
-
-
-    const nextY =
-
-      player.y +
-
-      dy *
-
-      distance;
-
-
-
-    if (
-      !blocked(
-        nextX,
-        player.y
-      )
-    ) {
-
-      player.x =
-        nextX;
-
-    }
-
-
-    if (
-      !blocked(
-        player.x,
-        nextY
-      )
-    ) {
-
-      player.y =
-        nextY;
-
-    }
-
-
-
-    player.moving = true;
-
-
-    player.animation +=
-
-      deltaTime *
-
-      0.015;
-
-  }
-
-  else {
+  if (keys.left) dx--;
+  if (keys.right) dx++;
+  if (keys.up) dy--;
+  if (keys.down) dy++;
+
+  if (dx === 0 && dy === 0) {
 
     player.moving = false;
+    player.frame = 0;
 
+    return;
   }
 
+  const length = Math.hypot(dx, dy);
+
+  dx /= length;
+  dy /= length;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+
+    player.direction =
+      dx < 0 ? "left" : "right";
+
+  } else {
+
+    player.direction =
+      dy < 0 ? "up" : "down";
+  }
+
+  const distance = player.speed * dt;
+
+  const nx = player.x + dx * distance;
+  const ny = player.y + dy * distance;
+
+  if (!isBlocked(nx, player.y)) {
+    player.x = nx;
+  }
+
+  if (!isBlocked(player.x, ny)) {
+    player.y = ny;
+  }
+
+  player.moving = true;
+
+  player.frameTimer += dt;
+
+  if (player.frameTimer > .16) {
+
+    player.frameTimer = 0;
+
+    player.frame =
+      (player.frame + 1) % 3;
+  }
 }
 
 
-
-/* ========================================
+/* =========================================================
    カメラ
-======================================== */
+   ========================================================= */
 
-
-function getCamera() {
+function camera() {
 
   let x =
-
     player.x -
-
-    canvas.width /
-    2;
-
+    innerWidth / 2;
 
   let y =
-
     player.y -
-
-    canvas.height /
-    2;
-
-
+    innerHeight / 2;
 
   x = Math.max(
-
     0,
-
     Math.min(
-
-      WORLD.width -
-      canvas.width,
-
+      WORLD.width - innerWidth,
       x
-
     )
-
   );
-
 
   y = Math.max(
-
     0,
-
     Math.min(
-
-      WORLD.height -
-      canvas.height,
-
+      WORLD.height - innerHeight,
       y
-
     )
-
   );
 
-
-  return {
-
-    x,
-
-    y
-
-  };
-
+  return { x, y };
 }
 
 
-
-/* ========================================
+/* =========================================================
    地面
-======================================== */
+   ========================================================= */
 
+function drawGround(time) {
 
-function drawGround() {
+  /*
+     地面のベース色だけはCanvas。
+     建物・人物・植物などのグラフィックは
+     アップロードした画像を使用。
+  */
 
-  ctx.fillStyle =
-    "#527d45";
-
+  ctx.fillStyle = "#496f3f";
 
   ctx.fillRect(
-
     0,
-
     0,
-
     WORLD.width,
-
     WORLD.height
-
   );
+
+
+  /* 地面の細かな草 */
+
+  ctx.globalAlpha = .15;
+
+  for (let x = 30; x < WORLD.width; x += 46) {
+
+    for (let y = 25; y < WORLD.height; y += 43) {
+
+      const offset =
+        Math.sin(
+          x * .07 +
+          y * .05
+        ) * 5;
+
+      ctx.fillStyle =
+        ((x + y) % 3 === 0)
+          ? "#92a95e"
+          : "#284f31";
+
+      ctx.fillRect(
+        x + offset,
+        y,
+        3,
+        5
+      );
+    }
+  }
+
+  ctx.globalAlpha = 1;
 
 
   /* 道 */
 
-  ctx.fillStyle =
-    "#b5a27b";
+  ctx.fillStyle = "#a18d68";
+
+  ctx.beginPath();
+
+  ctx.moveTo(930, 0);
+  ctx.lineTo(1120, 0);
+  ctx.lineTo(1120, 720);
+  ctx.lineTo(1600, 720);
+  ctx.lineTo(1600, 900);
+  ctx.lineTo(1120, 900);
+  ctx.lineTo(1120, 1550);
+  ctx.lineTo(900, 1550);
+  ctx.lineTo(900, 930);
+  ctx.lineTo(100, 930);
+  ctx.lineTo(100, 750);
+  ctx.lineTo(930, 750);
+
+  ctx.closePath();
+  ctx.fill();
 
 
-  ctx.fillRect(
+  /* 道の粒 */
 
-    880,
+  ctx.globalAlpha = .22;
 
-    0,
+  for (let i = 0; i < 170; i++) {
 
-    180,
+    const px =
+      (i * 173) %
+      WORLD.width;
 
-    WORLD.height
+    const py =
+      (i * 311) %
+      WORLD.height;
 
-  );
+    ctx.fillStyle =
+      i % 2
+        ? "#d1bd91"
+        : "#665a43";
 
+    ctx.fillRect(
+      px,
+      py,
+      4,
+      3
+    );
+  }
 
-  ctx.fillRect(
-
-    120,
-
-    820,
-
-    1450,
-
-    190
-
-  );
+  ctx.globalAlpha = 1;
 
 
   /* 川 */
 
-  ctx.fillStyle =
-    "#326c83";
+  const waterMove =
+    (time * 35) % 55;
 
+  ctx.fillStyle = "#35788a";
 
   ctx.fillRect(
-
-    1600,
-
+    1720,
     0,
-
-    400,
-
+    380,
     WORLD.height
-
   );
 
-
-  /* 水の線 */
-
-  ctx.strokeStyle =
-    "#6fa9b9";
-
-
-  ctx.lineWidth = 3;
-
+  ctx.globalAlpha = .35;
+  ctx.strokeStyle = "#9ed5dc";
+  ctx.lineWidth = 2;
 
   for (
-    let y = 20;
+    let y = -60 + waterMove;
     y < WORLD.height;
-    y += 40
+    y += 55
   ) {
 
     ctx.beginPath();
 
     ctx.moveTo(
-      1620,
+      1740,
       y
     );
 
-    ctx.lineTo(
-      1980,
-      y + 10
+    ctx.bezierCurveTo(
+      1810,
+      y - 8,
+      1880,
+      y + 13,
+      1960,
+      y
     );
 
     ctx.stroke();
-
   }
 
+  ctx.globalAlpha = 1;
 }
 
 
+/* =========================================================
+   画像の一部だけを描画
+   ========================================================= */
 
-/* ========================================
+function drawCrop(
+  img,
+  sx,
+  sy,
+  sw,
+  sh,
+  dx,
+  dy,
+  dw,
+  dh
+) {
+
+  if (!img) return;
+
+  ctx.drawImage(
+    img,
+    sx,
+    sy,
+    sw,
+    sh,
+    dx,
+    dy,
+    dw,
+    dh
+  );
+}
+
+
+/* =========================================================
    建物
-======================================== */
+   ========================================================= */
 
+function drawBuilding(b) {
 
-function drawBuilding(
-  building
-) {
+  const img = IMG[b.image];
 
-  const x =
-    building.x;
+  if (!img) return;
 
+  /*
+     建物PNGの上部には素材集の文字があるため、
+     上側を少し除外して実際の建物部分を使用。
+  */
 
-  const y =
-    building.y;
+  const topCut =
+    Math.min(30, img.height * .14);
 
+  ctx.drawImage(
+    img,
 
-  const width =
-    building.width;
+    0,
+    topCut,
 
+    img.width,
+    img.height - topCut,
 
-  const height =
-    building.height;
+    b.x,
+    b.y,
 
-
-
-  /* 壁 */
-
-  ctx.fillStyle =
-    "#c3b48e";
-
-
-  ctx.fillRect(
-
-    x,
-
-    y + 80,
-
-    width,
-
-    height - 80
-
+    b.w,
+    b.h
   );
-
-
-
-  /* 屋根 */
-
-  ctx.fillStyle =
-    building.roof;
-
-
-  ctx.beginPath();
-
-
-  ctx.moveTo(
-
-    x - 25,
-
-    y + 90
-
-  );
-
-
-  ctx.lineTo(
-
-    x +
-    width / 2,
-
-    y
-
-  );
-
-
-  ctx.lineTo(
-
-    x +
-    width +
-    25,
-
-    y + 90
-
-  );
-
-
-  ctx.closePath();
-
-
-  ctx.fill();
-
-
-
-  /* ドア */
-
-  ctx.fillStyle =
-    "#54392c";
-
-
-  ctx.fillRect(
-
-    x +
-    width / 2 -
-    22,
-
-    y +
-    height -
-    65,
-
-    44,
-
-    65
-
-  );
-
-
-
-  /* 窓 */
-
-  ctx.fillStyle =
-    "#f3c75d";
-
-
-  ctx.fillRect(
-
-    x + 50,
-
-    y +
-    height -
-    100,
-
-    45,
-
-    45
-
-  );
-
-
-  ctx.fillRect(
-
-    x +
-    width -
-    95,
-
-    y +
-    height -
-    100,
-
-    45,
-
-    45
-
-  );
-
 }
 
 
-
-/* ========================================
+/* =========================================================
    木
-======================================== */
+   trees_plants_flowers.png 内の木を利用
+   ========================================================= */
 
+function drawTree(x, y, scale = 1) {
 
-function drawTree(
-  x,
-  y
-) {
+  const img = IMG.trees;
 
-  ctx.fillStyle =
-    "#563d2b";
+  if (!img) return;
 
+  /*
+     木・植物素材集の左上付近にある
+     大きな木を使用。
+  */
 
-  ctx.fillRect(
+  const sw = Math.min(115, img.width * .28);
+  const sh = Math.min(145, img.height * .58);
 
-    x - 8,
+  const w = 105 * scale;
+  const h = 135 * scale;
 
-    y,
-
-    16,
-
-    45
-
-  );
-
-
-  ctx.fillStyle =
-    "#295637";
-
-
-  ctx.beginPath();
-
-
-  ctx.arc(
-
-    x,
-
-    y - 10,
-
-    35,
+  ctx.drawImage(
+    img,
 
     0,
-
-    Math.PI * 2
-
-  );
-
-
-  ctx.fill();
-
-
-  ctx.fillStyle =
-    "#3f7043";
-
-
-  ctx.beginPath();
-
-
-  ctx.arc(
-
-    x - 18,
-
-    y - 25,
-
-    22,
-
     0,
 
-    Math.PI * 2
+    sw,
+    sh,
 
+    x - w / 2,
+    y - h,
+
+    w,
+    h
   );
-
-
-  ctx.fill();
-
-
-  ctx.beginPath();
-
-
-  ctx.arc(
-
-    x + 20,
-
-    y - 22,
-
-    25,
-
-    0,
-
-    Math.PI * 2
-
-  );
-
-
-  ctx.fill();
-
 }
 
 
+/* =========================================================
+   花・低木
+   ========================================================= */
 
-/* ========================================
-   NPC
-======================================== */
+function drawBush(x, y, variant = 0) {
+
+  const img = IMG.trees;
+
+  if (!img) return;
+
+  const sx =
+    Math.min(
+      110 + variant * 55,
+      Math.max(0, img.width - 60)
+    );
+
+  const sy =
+    Math.min(
+      90,
+      Math.max(0, img.height - 60)
+    );
+
+  ctx.drawImage(
+    img,
+    sx,
+    sy,
+    55,
+    55,
+    x - 28,
+    y - 42,
+    56,
+    56
+  );
+}
 
 
-function drawCharacter(
-  character
+/* =========================================================
+   井戸
+   ========================================================= */
+
+function drawWell(x, y) {
+
+  const img = IMG.well;
+
+  if (!img) return;
+
+  ctx.drawImage(
+    img,
+
+    0,
+    Math.min(20, img.height * .1),
+
+    Math.min(95, img.width),
+    Math.min(150, img.height - 20),
+
+    x - 55,
+    y - 100,
+
+    110,
+    120
+  );
+}
+
+
+/* =========================================================
+   荷車
+   ========================================================= */
+
+function drawCart(x, y) {
+
+  const img = IMG.cart;
+
+  if (!img) return;
+
+  ctx.drawImage(
+    img,
+
+    0,
+    Math.min(20, img.height * .1),
+
+    Math.min(120, img.width),
+    Math.min(130, img.height - 20),
+
+    x - 75,
+    y - 90,
+
+    150,
+    115
+  );
+}
+
+
+/* =========================================================
+   橋
+   ========================================================= */
+
+function drawBridge() {
+
+  const img = IMG.water;
+
+  if (!img) return;
+
+  /*
+     水・橋・船シート中央付近の
+     石橋素材を使用。
+  */
+
+  const sx =
+    Math.floor(
+      img.width * .18
+    );
+
+  const sy =
+    Math.floor(
+      img.height * .12
+    );
+
+  const sw =
+    Math.max(
+      40,
+      Math.floor(
+        img.width * .34
+      )
+    );
+
+  const sh =
+    Math.max(
+      50,
+      Math.floor(
+        img.height * .70
+      )
+    );
+
+  ctx.save();
+
+  ctx.translate(
+    1730,
+    1010
+  );
+
+  ctx.rotate(
+    Math.PI / 2
+  );
+
+  ctx.drawImage(
+    img,
+
+    sx,
+    sy,
+    sw,
+    sh,
+
+    -100,
+    -65,
+    200,
+    130
+  );
+
+  ctx.restore();
+}
+
+
+/* =========================================================
+   キャラクター素材
+   ========================================================= */
+
+function drawSpriteCharacter(
+  img,
+  x,
+  y,
+  direction = "down",
+  frame = 0,
+  scale = 1,
+  moving = false
 ) {
 
-  const x =
-    character.x;
+  if (!img) return;
+
+  /*
+     元画像は完成アトラスではなく
+     素材見本ボードから切り出した画像。
+
+     そのため、各方向の領域を選択して表示する。
+  */
+
+  let row = 0;
+
+  if (direction === "down") row = 0;
+  if (direction === "left") row = 1;
+  if (direction === "right") row = 1;
+  if (direction === "up") row = 2;
+
+  const columns = 3;
+  const rows = 3;
+
+  const fw =
+    img.width / columns;
+
+  const fh =
+    img.height / rows;
+
+  let col =
+    moving
+      ? frame % 3
+      : 1;
+
+  /*
+     左右の素材構成差を吸収
+  */
+
+  if (direction === "right") {
+    col =
+      Math.min(
+        2,
+        col + 1
+      );
+  }
+
+  const bob =
+    moving
+      ? Math.sin(
+          performance.now() * .018
+        ) * 1.5
+      : 0;
+
+  const dw =
+    54 * scale;
+
+  const dh =
+    74 * scale;
 
 
-  const y =
-    character.y;
+  /* 影 */
 
+  ctx.save();
 
+  ctx.globalAlpha = .25;
 
-  ctx.fillStyle =
-    "rgba(0,0,0,.3)";
-
+  ctx.fillStyle = "#000";
 
   ctx.beginPath();
-
 
   ctx.ellipse(
-
     x,
-
-    y + 5,
-
-    15,
-
-    6,
-
+    y + 2,
+    17 * scale,
+    7 * scale,
     0,
-
     0,
-
     Math.PI * 2
-
   );
-
 
   ctx.fill();
 
+  ctx.restore();
 
 
-  /* 体 */
+  ctx.drawImage(
+    img,
 
-  ctx.fillStyle =
-    character.type
-    ===
-    "elena"
-      ? "#885a64"
-      : "#415d76";
+    col * fw,
+    row * fh,
 
+    fw,
+    fh,
 
-  ctx.fillRect(
+    x - dw / 2,
+    y - dh + bob,
 
-    x - 12,
-
-    y - 35,
-
-    24,
-
-    32
-
+    dw,
+    dh
   );
-
-
-
-  /* 顔 */
-
-  ctx.fillStyle =
-    "#d8a475";
-
-
-  ctx.fillRect(
-
-    x - 10,
-
-    y - 55,
-
-    20,
-
-    20
-
-  );
-
-
-
-  /* 髪 */
-
-  ctx.fillStyle =
-    "#3a2921";
-
-
-  ctx.fillRect(
-
-    x - 11,
-
-    y - 60,
-
-    22,
-
-    9
-
-  );
-
 }
 
 
-
-/* ========================================
+/* =========================================================
    主人公
-======================================== */
-
+   ========================================================= */
 
 function drawPlayer() {
 
-  const bob =
-
-    player.moving
-
-      ? Math.sin(
-          player.animation *
-          5
-        ) * 2
-
-      : 0;
-
-
-
-  ctx.fillStyle =
-    "rgba(0,0,0,.35)";
-
-
-  ctx.beginPath();
-
-
-  ctx.ellipse(
+  drawSpriteCharacter(
+    IMG.hero,
 
     player.x,
+    player.y,
 
-    player.y + 5,
+    player.direction,
+    player.frame,
 
-    17,
-
-    7,
-
-    0,
-
-    0,
-
-    Math.PI * 2
-
-  );
-
-
-  ctx.fill();
-
-
-
-  /* 足 */
-
-  const walk =
+    1,
 
     player.moving
-
-      ? Math.sin(
-          player.animation *
-          6
-        ) * 5
-
-      : 0;
-
-
-  ctx.fillStyle =
-    "#252d37";
-
-
-  ctx.fillRect(
-
-    player.x - 10,
-
-    player.y -
-    15 +
-    walk,
-
-    7,
-
-    20
-
   );
-
-
-  ctx.fillRect(
-
-    player.x + 3,
-
-    player.y -
-    15 -
-    walk,
-
-    7,
-
-    20
-
-  );
-
-
-
-  /* 体 */
-
-  ctx.fillStyle =
-    "#294d70";
-
-
-  ctx.fillRect(
-
-    player.x - 14,
-
-    player.y -
-    45 +
-    bob,
-
-    28,
-
-    32
-
-  );
-
-
-
-  /* 顔 */
-
-  ctx.fillStyle =
-    "#d7a173";
-
-
-  ctx.fillRect(
-
-    player.x - 11,
-
-    player.y -
-    65 +
-    bob,
-
-    22,
-
-    20
-
-  );
-
-
-
-  /* 髪 */
-
-  ctx.fillStyle =
-    "#17232e";
-
-
-  ctx.fillRect(
-
-    player.x - 13,
-
-    player.y -
-    71 +
-    bob,
-
-    26,
-
-    10
-
-  );
-
 }
 
 
+/* =========================================================
+   NPC
+   ========================================================= */
 
-/* ========================================
+function drawNPC(npc, time) {
+
+  const bob =
+    Math.sin(
+      time * 2 +
+      npc.x * .01
+    ) * 1.2;
+
+  drawSpriteCharacter(
+    IMG[npc.image],
+
+    npc.x,
+    npc.y + bob,
+
+    "down",
+    0,
+
+    npc.scale,
+
+    false
+  );
+}
+
+
+/* =========================================================
+   花壇
+   ========================================================= */
+
+const bushes = [
+  [490,610,0],
+  [535,625,1],
+  [590,610,2],
+
+  [1210,610,1],
+  [1260,620,2],
+  [1310,610,0],
+
+  [400,1050,2],
+  [460,1070,1],
+
+  [1480,1210,0],
+  [1530,1190,2]
+];
+
+
+/* =========================================================
    会話
-======================================== */
+   ========================================================= */
 
+let storyStage = 0;
 
-function showDialog(
-  name,
-  message
-) {
+function showDialog(name, text) {
 
-  speaker.textContent =
-    name;
+  speakerBox.textContent = name;
 
+  dialogText.textContent = text;
 
-  dialogText.textContent =
-    message;
-
-
-  dialog.style.display =
-    "block";
-
+  dialogBox.style.display = "block";
 }
-
-
 
 function closeDialog() {
 
-  dialog.style.display =
-    "none";
+  dialogBox.style.display = "none";
+}
 
+function setQuest(text) {
+
+  questBox.textContent =
+    "◆ " + text;
 }
 
 
-
-function setQuest(
-  message
-) {
-
-  quest.textContent =
-    "◆ " + message;
-
-}
-
-
-
-/* ========================================
-   NPC会話
-======================================== */
-
+/* =========================================================
+   調べる
+   ========================================================= */
 
 function interact() {
 
   if (
-    dialog.style.display
-    ===
-    "block"
+    dialogBox.style.display === "block"
   ) {
-
     closeDialog();
-
     return;
-
   }
 
-
-
   let nearest = null;
+  let nearestDistance = Infinity;
 
-  let distance =
-    Infinity;
-
-
-
-  for (
-    const npc
-    of npcs
-  ) {
+  for (const npc of npcs) {
 
     const d =
       Math.hypot(
-
-        player.x -
-        npc.x,
-
-        player.y -
-        npc.y
-
+        player.x - npc.x,
+        player.y - npc.y
       );
 
+    if (d < nearestDistance) {
 
-    if (
-      d < distance
-    ) {
-
-      distance = d;
-
+      nearestDistance = d;
       nearest = npc;
-
     }
-
   }
 
-
-
   if (
-    !nearest ||
-    distance > 90
+    nearest &&
+    nearestDistance < 95
   ) {
+
+    talk(nearest);
 
     return;
-
   }
 
+  /* 井戸 */
 
-
-  if (
-    nearest.name
-    ===
-    "エレナ"
-  ) {
-
-    if (
-      storyStage === 0
-    ) {
-
-      showDialog(
-
-        "エレナ",
-
-        "ごめんね……今日は少し身体が重くてね。\n大丈夫。すぐ良くなるから。"
-
-      );
-
-
-      storyStage = 1;
-
-
-      setQuest(
-
-        "薬師に母のことを相談しよう"
-
-      );
-
-    }
-
-    else {
-
-      showDialog(
-
-        "エレナ",
-
-        "そんなに心配しなくていいからね。"
-
-      );
-
-    }
-
-  }
-
-
-
-  else if (
-    nearest.name
-    ===
-    "薬師"
-  ) {
-
-    if (
-      storyStage >= 1
-    ) {
-
-      showDialog(
-
-        "薬師",
-
-        "ただの風邪じゃなさそうだね。\n「月白草」があれば薬を作れる。\n北のルナ洞窟に生えているはずだよ。"
-
-      );
-
-
-      storyStage = 2;
-
-
-      setQuest(
-
-        "武器屋で洞窟へ行く準備をしよう"
-
-      );
-
-    }
-
-  }
-
-
-
-  else if (
-    nearest.name
-    ===
-    "武器屋"
-  ) {
-
-    if (
-      storyStage >= 2
-    ) {
-
-      showDialog(
-
-        "武器屋",
-
-        "洞窟へ行くだと？\n……母ちゃんのためか。\n\nこの古びた剣を貸してやる。\n生きて返しに来いよ。"
-
-      );
-
-
-      storyStage = 3;
-
-
-      setQuest(
-
-        "北のルナ洞窟へ向かおう"
-
-      );
-
-    }
-
-  }
-
-
-
-  else {
-
-    showDialog(
-
-      nearest.name,
-
-      "エレナさん、早く良くなるといいね。"
-
+  const wellDistance =
+    Math.hypot(
+      player.x - 820,
+      player.y - 760
     );
 
-  }
+  if (wellDistance < 100) {
 
+    showDialog(
+      "",
+      "古い井戸だ。\n底の方から水の音が聞こえる。"
+    );
+
+    return;
+  }
 }
 
 
+/* =========================================================
+   NPC会話
+   ========================================================= */
 
-/* ========================================
-   描画
-======================================== */
+function talk(npc) {
+
+  if (npc.name === "エレナ") {
+
+    if (storyStage === 0) {
+
+      showDialog(
+        "エレナ",
+        "ごめんね……今日は少し身体が重くてね。\n大丈夫。すぐ良くなるから。"
+      );
+
+      storyStage = 1;
+
+      setQuest(
+        "薬師に母のことを相談しよう"
+      );
+
+    } else {
+
+      showDialog(
+        "エレナ",
+        "そんなに心配しなくても大丈夫よ。"
+      );
+    }
+
+    return;
+  }
 
 
-function draw() {
+  if (npc.name === "薬師") {
 
-  ctx.clearRect(
+    if (storyStage < 1) {
 
-    0,
+      showDialog(
+        "薬師",
+        "どうしたんだい？"
+      );
 
-    0,
+      return;
+    }
 
-    canvas.width,
+    if (storyStage === 1) {
 
-    canvas.height
+      showDialog(
+        "薬師",
+        "ただの風邪じゃなさそうだね。\n\n月白草があれば薬を作れる。\n北のルナ洞窟に生えているはずだよ。"
+      );
 
+      storyStage = 2;
+
+      setQuest(
+        "武器屋で洞窟へ行く準備をしよう"
+      );
+
+      return;
+    }
+
+    showDialog(
+      "薬師",
+      "月白草は北のルナ洞窟だよ。\n気をつけて行くんだよ。"
+    );
+
+    return;
+  }
+
+
+  if (npc.name === "武器屋") {
+
+    if (storyStage < 2) {
+
+      showDialog(
+        "武器屋",
+        "悪いが、冷やかしなら帰んな。"
+      );
+
+      return;
+    }
+
+    if (storyStage === 2) {
+
+      showDialog(
+        "武器屋",
+        "洞窟へ行くだと？\n馬鹿言うな。お前は兵士でも冒険者でもないだろ。\n\n……そうか。母ちゃんのためか。\n\n昔、俺が使ってたもんだ。\nこの古びた剣を貸してやる。\n\n貸すだけだからな。\n生きて返しに来いよ。"
+      );
+
+      storyStage = 3;
+
+      setQuest(
+        "北のルナ洞窟へ向かおう"
+      );
+
+      return;
+    }
+
+    showDialog(
+      "武器屋",
+      "絶対に無茶はするなよ。"
+    );
+
+    return;
+  }
+
+
+  if (npc.name === "子供") {
+
+    showDialog(
+      "子供",
+      "北の洞窟って、夜になると光るんだって！"
+    );
+
+    return;
+  }
+
+
+  showDialog(
+    "村人",
+    "エレナさん、早く良くなるといいね。"
+  );
+}
+
+
+/* =========================================================
+   描画順
+   ========================================================= */
+
+function drawWorld(time) {
+
+  drawGround(time);
+
+
+  /*
+     背景側の木
+  */
+
+  for (const tree of trees) {
+
+    drawTree(
+      tree[0],
+      tree[1],
+      tree[2]
+    );
+  }
+
+
+  /*
+     建物
+  */
+
+  for (const b of buildings) {
+    drawBuilding(b);
+  }
+
+
+  /*
+     花・植物
+  */
+
+  for (const b of bushes) {
+
+    drawBush(
+      b[0],
+      b[1],
+      b[2]
+    );
+  }
+
+
+  /*
+     橋
+  */
+
+  drawBridge();
+
+
+  /*
+     Y座標で描画順を変更
+     主人公がNPCの前後を自然に歩く
+  */
+
+  const entities = [];
+
+
+  for (const npc of npcs) {
+
+    entities.push({
+      y: npc.y,
+      draw: () => drawNPC(npc, time)
+    });
+  }
+
+
+  entities.push({
+    y: 760,
+    draw: () => drawWell(820,760)
+  });
+
+
+  entities.push({
+    y: 1080,
+    draw: () => drawCart(1460,1080)
+  });
+
+
+  entities.push({
+    y: player.y,
+    draw: drawPlayer
+  });
+
+
+  entities.sort(
+    (a,b) => a.y - b.y
   );
 
 
-  const camera =
-    getCamera();
+  for (const entity of entities) {
 
+    entity.draw();
+  }
+}
+
+
+/* =========================================================
+   ゲームループ
+   ========================================================= */
+
+let lastTime = performance.now();
+
+function loop(now) {
+
+  const dt =
+    Math.min(
+      (now - lastTime) / 1000,
+      .033
+    );
+
+  lastTime = now;
+
+  updatePlayer(dt);
+
+
+  ctx.clearRect(
+    0,
+    0,
+    innerWidth,
+    innerHeight
+  );
+
+
+  const cam = camera();
 
 
   ctx.save();
 
-
   ctx.translate(
-
-    -camera.x,
-
-    -camera.y
-
+    -cam.x,
+    -cam.y
   );
 
 
-
-  drawGround();
-
-
-
-  /* 木 */
-
-  for (
-    let i = 0;
-    i < 18;
-    i++
-  ) {
-
-    drawTree(
-
-      100 +
-      (
-        i *
-        173
-      ) %
-      1450,
-
-      120 +
-      (
-        i *
-        241
-      ) %
-      1250
-
-    );
-
-  }
-
-
-
-  /* 建物 */
-
-  for (
-    const building
-    of buildings
-  ) {
-
-    drawBuilding(
-      building
-    );
-
-  }
-
-
-
-  /* NPC */
-
-  const characters = [
-
-    ...npcs,
-
-    {
-
-      player: true,
-
-      x: player.x,
-
-      y: player.y
-
-    }
-
-  ];
-
-
-  characters.sort(
-
-    (
-      a,
-      b
-    ) =>
-
-      a.y -
-      b.y
-
+  drawWorld(
+    now / 1000
   );
-
-
-
-  for (
-    const character
-    of characters
-  ) {
-
-    if (
-      character.player
-    ) {
-
-      drawPlayer();
-
-    }
-
-    else {
-
-      drawCharacter(
-        character
-      );
-
-    }
-
-  }
-
 
 
   ctx.restore();
 
+
+  requestAnimationFrame(loop);
 }
 
 
+/* =========================================================
+   開始
+   ========================================================= */
 
-/* ========================================
-   ゲームループ
-======================================== */
+async function start() {
 
+  await loadAllImages();
 
-let previousTime =
-  performance.now();
-
-
-
-function gameLoop(
-  currentTime
-) {
-
-  const deltaTime =
-
-    Math.min(
-
-      34,
-
-      currentTime -
-      previousTime
-
-    );
-
-
-  previousTime =
-    currentTime;
-
-
-
-  updatePlayer(
-    deltaTime
-  );
-
-
-  draw();
-
-
-
-  requestAnimationFrame(
-    gameLoop
-  );
-
+  requestAnimationFrame(loop);
 }
 
-
-
-requestAnimationFrame(
-  gameLoop
-);
-
+start();
 
 </script>
 
